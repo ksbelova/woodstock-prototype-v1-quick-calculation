@@ -8036,9 +8036,11 @@
     }
     if (view?.sameBackLayout) {
       form.layoutBSelect.value = "";
-      form.layoutBField.setAttribute("data-quick-hidden", "");
+      form.layoutBField.removeAttribute("data-quick-hidden");
       const fixed = ["design", "multi"].includes(selectedMaterialType());
-      form.layoutSelect.closest(".field").toggleAttribute("data-quick-hidden", fixed);
+      form.layoutSelect.closest(".field").removeAttribute("data-quick-hidden");
+      form.layoutSelect.disabled = fixed;
+      form.layoutBSelect.disabled = true;
       if (fixed) form.layoutSelect.value = "straight";
     }
     if (isQuickWallPanel() || isQuickDetailsPanel()) form.toningSelect.value = "no";
@@ -8061,6 +8063,19 @@
     syncDetailedBevelAvailability();
     updateDetailedSideHints();
     syncVeneerActualOverridesWithDemand();
+    if (view?.fixedWallConfiguration) {
+      // Fixed choices remain visible, including after restoring an older calculation.
+      [form.baseSelect, form.edgeModeSelect].forEach(input => input.closest(".form-block").removeAttribute("data-quick-hidden"));
+      [form.baseSelect, form.baseThicknessSelect, form.veneeredSidesSelect, form.reverseSideSelect,
+        form.edgeSidesSelect, form.edgeThicknessSelect, form.finishSelect, form.lacquerProcessSelect].forEach(input => {
+        input.disabled = true;
+        const field = input.closest(".field");
+        field?.removeAttribute("data-quick-hidden");
+        field?.classList.remove("is-hidden");
+      });
+      form.veneerSelectionDetailsGrid.classList.remove("is-hidden");
+      form.veneerSideBGrid.classList.remove("is-hidden");
+    }
     lastCalculation = calculate();
     if (!lastCalculation) {
       renderLocalValidation(null);

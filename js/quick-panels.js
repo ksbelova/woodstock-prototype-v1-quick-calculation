@@ -237,11 +237,8 @@
   // These are the existing detailed fields, hidden for the shortened client scenario.
   ['toningSelect','isolatorSelect','positionFinishToggle','positionEdgeToggle','lacquerExecutionSelect','lacquerProcessSelect','enamelVariantSelect','edgeOrderPriceInput','separateEdgeOrderPriceInput'].forEach(id=>{$(id)?.closest('.field')?.setAttribute('data-quick-hidden','');});
   if(wall){
-   [api.form.baseSelect,api.form.edgeModeSelect].forEach(field=>field.closest('.form-block').setAttribute('data-quick-hidden',''));
-   api.form.finishSelect.closest('.field').setAttribute('data-quick-hidden','');
    api.form.finishSelect.value='lacquer_acrylic';
   }
-  if(standard)api.form.layoutBField.setAttribute('data-quick-hidden','');
   api.form.finishSelect.dispatchEvent(new Event('change',{bubbles:true}));api.recalculate();render(api.result());
  }
  // Configure the view before detailed-panels.js starts; the DOM event runs after it has been loaded.
