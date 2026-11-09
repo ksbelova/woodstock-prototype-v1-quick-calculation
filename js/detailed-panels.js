@@ -6485,6 +6485,7 @@
       validSizes.length &&
       faceVeneerReady &&
       faceThicknessReady &&
+      (!isQuickStandardPanel() || [1, 2].includes(sides)) &&
       (!requiresTwoFaceSides(veneerThickness) || sides === 2) &&
       reverseSideReady &&
       (!layoutSelectionRequired || layout) &&
@@ -7547,6 +7548,9 @@
 
     const sides = Number(form.veneeredSidesSelect.value);
     const veneerThickness = selectedVeneerThickness();
+    if (isQuickStandardPanel() && ![1, 2].includes(sides)) {
+      add("veneeredSides", "вариант фанеровки", form.veneeredSidesSelect, "Выберите вариант фанеровки.");
+    }
     if (requiresTwoFaceSides(veneerThickness) && sides !== 2) {
       add("veneeredSides", "две фанерованные стороны", form.veneeredSidesSelect, twoSidedVeneerRequirementMessage());
     }
