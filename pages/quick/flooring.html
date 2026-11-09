@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Краткий расчёт ориентировочной стоимости инженерной доски WOODSTOCK." />
+  <title>Инженерная доска — краткий расчёт WOODSTOCK</title>
+  <link rel="stylesheet" href="../../css/main.css" />
+</head>
+<body>
+  <main class="start-page calc-page flooring-page">
+    <header class="page-head calc-head">
+      <div class="page-head__content">
+        <p class="kicker">WOODSTOCK · Краткий расчёт</p>
+        <h1>Инженерная доска</h1>
+        <p class="lead">Выберите материал, раскладку и площадь помещения, чтобы узнать ориентировочную стоимость.</p>
+      </div>
+      <a class="back-link" href="./product-type.html">Назад</a>
+    </header>
+
+    <section class="calc-layout">
+      <form class="calc-form" id="quickFlooringForm" novalidate>
+        <section class="form-block">
+          <h2>Материал</h2>
+
+          <div class="field-grid field-grid--two">
+            <label class="field" id="materialTypeField">
+              <span class="field__label">Тип шпона</span>
+              <select id="materialTypeSelect">
+                <option value="">Выберите тип шпона</option>
+              </select>
+            </label>
+
+            <div class="field autocomplete-field" id="speciesField">
+              <label class="field__label" for="speciesInput">Наименование шпона</label>
+              <div class="autocomplete-control">
+                <input
+                  id="speciesInput"
+                  type="text"
+                  autocomplete="off"
+                  placeholder="Выберите шпон"
+                  aria-controls="speciesSuggestions"
+                  aria-expanded="false"
+                />
+                <button class="autocomplete-clear is-hidden" id="speciesClearButton" type="button" aria-label="Очистить наименование шпона">×</button>
+                <div class="autocomplete-menu is-hidden" id="speciesSuggestions" role="listbox"></div>
+              </div>
+              <span class="field__note" id="speciesHint"></span>
+              <span class="field__error" id="speciesError"></span>
+            </div>
+          </div>
+
+          <div class="field-grid field-grid--two">
+            <label class="field" id="topLayerField">
+              <span class="field__label">Верхний слой</span>
+              <select id="topLayerSelect" disabled>
+                <option value="">Выберите верхний слой</option>
+              </select>
+              <span class="field__note" id="topLayerHint"></span>
+              <span class="field__error" id="topLayerError"></span>
+            </label>
+          </div>
+        </section>
+
+        <section class="form-block">
+          <h2>Раскладка и метраж</h2>
+
+          <div class="form-subsection quick-layout-options">
+            <label class="field" id="patternField">
+              <span class="field__label">Раскладка</span>
+              <select id="patternSelect">
+                <option value="">Выберите раскладку</option>
+              </select>
+              <span class="field__error" id="patternError"></span>
+            </label>
+
+            <div class="field is-hidden" id="customPatternField">
+              <label class="field__label" for="customPatternInput">Описание раскладки</label>
+              <textarea id="customPatternInput" rows="4" placeholder="Опишите желаемую раскладку и дополнительные требования"></textarea>
+              <span class="field__error" id="customPatternError"></span>
+
+              <div class="file-upload-box">
+                <label class="field__label" for="customPatternFileInput">Материалы к раскладке</label>
+                <input
+                  id="customPatternFileInput"
+                  type="file"
+                  multiple
+                  accept=".pdf,.dwg,.dxf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+                />
+                <span class="field__note">План, схема раскладки или техническое задание.</span>
+                <div class="uploaded-files is-hidden" id="customPatternFileName">Файлы не выбраны</div>
+              </div>
+            </div>
+
+            <p class="field-warning is-hidden" id="customPatternWarning">
+              Индивидуальная раскладка требует дополнительной проверки перед подтверждением заказа.
+            </p>
+
+            <button
+              class="field-action board-size-toggle is-hidden"
+              id="boardSizeToggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="boardSizeFields"
+            >
+              Я знаю размеры досок
+            </button>
+
+            <div class="field-grid field-grid--two field-reveal-target is-hidden" id="boardSizeFields">
+              <label class="field" id="boardWidthField">
+                <span class="field__label">Ширина, мм</span>
+                <input id="boardWidthInput" type="number" step="1" inputmode="numeric" />
+                <span class="field__error" id="boardWidthError"></span>
+              </label>
+
+              <label class="field" id="boardLengthField">
+                <span class="field__label">Длина, мм</span>
+                <input id="boardLengthInput" type="number" step="1" inputmode="numeric" />
+                <span class="field__error" id="boardLengthError"></span>
+              </label>
+            </div>
+
+            <p class="field-warning is-hidden" id="boardWidthWarning">
+              Для ширины более 130 мм наличие подходящего материала проверяется при подтверждении заказа.
+            </p>
+          </div>
+
+          <div class="form-subsection quick-area-subsection">
+            <div class="field-grid field-grid--two">
+              <label class="field" id="roomAreaField">
+                <span class="field__label">Площадь помещения, м²</span>
+                <input id="roomAreaInput" type="number" min="0.01" step="0.01" inputmode="decimal" />
+                <span class="field__error" id="roomAreaError"></span>
+              </label>
+
+              <label class="field" id="wasteField">
+                <span class="field__label">Запас на укладку, %</span>
+                <input id="wasteInput" type="number" readonly />
+              </label>
+            </div>
+
+            <div class="area-summary" id="areaSummary" aria-live="polite">
+              <span class="area-summary__label">Итого к расчёту</span>
+              <strong class="area-summary__value" id="areaWithWasteValue">—</strong>
+              <span class="area-summary__formula" id="areaWithWasteFormula">Сначала выберите раскладку.</span>
+            </div>
+
+            <p class="field__note is-hidden" id="volumeDiscountHint">Для больших объёмов заказа предусмотрена скидка. Размер скидки можно уточнить у менеджера.</p>
+          </div>
+        </section>
+
+        <section class="form-block">
+          <h2>Финишное покрытие</h2>
+          <label class="field" id="finishField">
+            <span class="field__label">Покрытие</span>
+            <select id="finishSelect">
+              <option value="">Выберите покрытие</option>
+            </select>
+            <span class="field__error" id="finishError"></span>
+            <p class="field__note is-hidden" id="finishHint">Стандартная степень блеска зависит от выбранного лакового покрытия.</p>
+          </label>
+        </section>
+
+        <section class="form-block" id="contactBlock">
+          <h2>Контактная информация</h2>
+
+          <div class="field-grid field-grid--two">
+            <label class="field" id="nameField">
+              <span class="field__label">Имя *</span>
+              <input id="nameInput" type="text" autocomplete="name" placeholder="Ваше имя" />
+              <span class="field__error" id="nameError"></span>
+            </label>
+
+            <div class="field autocomplete-field" id="cityField">
+              <label class="field__label" for="cityInput">Город *</label>
+              <div class="autocomplete-control">
+                <input
+                  id="cityInput"
+                  type="text"
+                  autocomplete="address-level2"
+                  placeholder="Выберите или введите город"
+                  aria-controls="citySuggestions"
+                  aria-expanded="false"
+                />
+                <div class="autocomplete-menu is-hidden" id="citySuggestions" role="listbox"></div>
+              </div>
+              <span class="field__error" id="cityError"></span>
+            </div>
+          </div>
+
+          <div class="field-grid field-grid--two">
+            <label class="field" id="phoneField">
+              <span class="field__label">Номер телефона *</span>
+              <input
+                id="phoneInput"
+                type="tel"
+                autocomplete="tel"
+                inputmode="tel"
+                maxlength="25"
+                placeholder="+7, +375 или другой код страны"
+              />
+              <span class="field__error" id="phoneError"></span>
+            </label>
+
+            <label class="field" id="emailField">
+              <span class="field__label">Email</span>
+              <input
+                id="emailInput"
+                type="email"
+                autocomplete="email"
+                inputmode="email"
+                autocapitalize="none"
+                spellcheck="false"
+                maxlength="254"
+                placeholder="name@example.com"
+              />
+              <span class="field__error" id="emailError"></span>
+            </label>
+          </div>
+
+          <label class="field">
+            <span class="field__label">Комментарий</span>
+            <textarea id="commentInput" rows="4" placeholder="Дополнительные требования к инженерной доске"></textarea>
+          </label>
+
+          <label class="field file-upload-box">
+            <span class="field__label">Прикрепить файлы</span>
+            <input
+              id="filesInput"
+              type="file"
+              multiple
+              accept=".pdf,.dwg,.dxf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+            />
+            <span class="field__note">Чертёж, план, визуализация, техническое задание, таблица или другой файл по проекту.</span>
+            <div class="uploaded-files is-hidden" id="selectedFiles">Файлы не выбраны</div>
+          </label>
+
+          <label class="field" for="managerContactInput">
+            <span class="field__label">Связь с менеджером</span>
+            <span style="display:flex;align-items:flex-start;gap:10px;padding:14px;background:#fbfbfb;border:1px solid var(--line);border-radius:14px;cursor:pointer;">
+              <input id="managerContactInput" type="checkbox" style="width:auto;min-width:18px;min-height:18px;margin:1px 0 0;padding:0;" />
+              <span style="font-size:14px;line-height:1.45;">Хочу, чтобы менеджер связался со мной</span>
+            </span>
+          </label>
+
+          <label class="field" id="privacyField" for="privacyInput">
+            <span class="field__label">Согласие *</span>
+            <span style="display:flex;align-items:flex-start;gap:10px;padding:14px;background:#fbfbfb;border:1px solid var(--line);border-radius:14px;cursor:pointer;">
+              <input id="privacyInput" type="checkbox" style="width:auto;min-width:18px;min-height:18px;margin:1px 0 0;padding:0;" />
+              <span style="font-size:14px;line-height:1.45;">Согласен на обработку персональных данных</span>
+            </span>
+            <span class="field__error" id="privacyError"></span>
+          </label>
+        </section>
+      </form>
+
+      <aside class="spec-panel">
+        <div class="spec-panel__inner">
+          <p class="kicker">Ориентировочный расчёт</p>
+          <h2 class="spec-title">Инженерная доска</h2>
+          <div class="total-box">
+            <span>Ориентировочная стоимость с НДС</span>
+            <strong id="resultTotal">—</strong>
+          </div>
+
+          <button class="next-step-button" id="getCalculationButton" type="button">Скачать спецификацию и расчёт в PDF</button>
+          <p class="save-status" id="saveStatus" aria-live="polite"></p>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <dialog class="download-modal" id="downloadModal" aria-labelledby="downloadModalTitle">
+    <div class="download-modal__content">
+      <button
+        class="download-modal__close"
+        id="downloadModalClose"
+        type="button"
+        aria-label="Закрыть"
+      >
+        <span aria-hidden="true">×</span>
+      </button>
+
+      <h2 class="download-modal__title" id="downloadModalTitle">Спасибо! Спецификация скачана</h2>
+
+      <p class="download-modal__text">
+        Мы получили ваш расчёт. Менеджер WOODSTOCK проверит параметры.
+        Если потребуется уточнение, мы свяжемся с вами.
+      </p>
+
+      <div class="download-modal__contacts">
+        <strong>Есть вопросы?</strong>
+        <a href="tel:+74956171799">+7 (495) 617-17-99</a>
+        <a href="mailto:info@wood-s.com">info@wood-s.com</a>
+        <a href="https://woodstock.su/" target="_blank" rel="noopener noreferrer">woodstock.su</a>
+      </div>
+
+      <p class="download-modal__legal">
+        Расчёт является предварительным и не является публичной офертой.
+      </p>
+    </div>
+  </dialog>
+
+  <script src="../../vendor/pdfmake/pdfmake.min.js"></script>
+  <script src="../../vendor/pdfmake/vfs_fonts.js"></script>
+  <script src="../../js/core/flooring-core.js"></script>
+  <script src="../../js/core/quick-common.js"></script><script src="../../js/quick-flooring.js"></script>
+</body>
+</html>

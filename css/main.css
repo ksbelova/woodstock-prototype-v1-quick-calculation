@@ -1,0 +1,1985 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #f6f6f3;
+  --white: #ffffff;
+  --black: #111111;
+  --text: #191919;
+  --muted: #6f6f6f;
+  --line: #dddddd;
+  --line-dark: #bdbdbd;
+  --soft: #efefec;
+  --warning-bg: #f7f1e8;
+  --warning-line: #ddc8a8;
+  --ok-bg: #f1f6ef;
+  --ok-line: #c9d8c0;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 0;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+/* ========================================
+   Базовая структура страниц
+======================================== */
+
+.start-page {
+  min-height: 100vh;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 96px 28px 72px;
+  display: grid;
+  align-content: center;
+  gap: 72px;
+}
+
+.start-hero {
+  max-width: 820px;
+}
+
+.kicker {
+  margin: 0 0 22px;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+h1 {
+  max-width: 840px;
+  margin-bottom: 28px;
+  font-size: clamp(54px, 7vw, 92px);
+  line-height: 0.94;
+  font-weight: 500;
+  letter-spacing: -0.07em;
+}
+
+.lead {
+  max-width: 720px;
+  margin-bottom: 18px;
+  font-size: clamp(22px, 2.1vw, 28px);
+  line-height: 1.35;
+  color: var(--text);
+}
+
+.note {
+  max-width: 660px;
+  margin-bottom: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+/* ========================================
+   Стартовая страница
+   Выбор типа расчёта
+======================================== */
+
+.mode-section {
+  max-width: 860px;
+}
+
+.mode-section h2 {
+  margin-bottom: 18px;
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+
+.mode-list {
+  display: grid;
+  gap: 10px;
+}
+
+.mode-card {
+  min-height: 112px;
+  padding: 24px 26px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  align-items: center;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+}
+
+.mode-card--active {
+  cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.mode-card--active:hover {
+  transform: translateY(-1px);
+  border-color: var(--black);
+  background: #fbfbfb;
+}
+
+.mode-card--active:focus-visible {
+  outline: 2px solid var(--black);
+  outline-offset: 3px;
+}
+
+.mode-card__body {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.mode-card__title {
+  font-size: 22px;
+  line-height: 1.15;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+
+.mode-card__text {
+  max-width: 680px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.mode-card__action {
+  padding: 9px 14px;
+  font-size: 13px;
+  color: var(--black);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fafafa;
+  white-space: nowrap;
+}
+
+/* ========================================
+   Выбор категории продукции
+======================================== */
+
+.product-page {
+  gap: 56px;
+}
+
+.page-head {
+  width: 100%;
+  max-width: 860px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 32px;
+}
+
+.page-head__content {
+  min-width: 0;
+  max-width: 760px;
+}
+
+.page-head h1 {
+  margin-bottom: 24px;
+}
+
+.page-head .lead {
+  margin-bottom: 0;
+}
+
+.product-section {
+  margin-top: 0;
+}
+
+.product-list {
+  display: grid;
+  gap: 10px;
+}
+
+.product-card {
+  min-height: 118px;
+  padding: 24px 26px;
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  gap: 24px;
+  align-items: center;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--black);
+  background: #fbfbfb;
+}
+
+.product-card:focus-visible {
+  outline: 2px solid var(--black);
+  outline-offset: 3px;
+}
+
+.product-card__number {
+  font-size: 13px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+.product-card__body {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.product-card__title {
+  font-size: 22px;
+  line-height: 1.15;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+
+.product-card__text {
+  max-width: 680px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.product-card__action {
+  padding: 9px 14px;
+  font-size: 13px;
+  color: var(--black);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fafafa;
+  white-space: nowrap;
+}
+
+/* ========================================
+   Ссылка «Назад»
+======================================== */
+
+.back-link {
+  flex: 0 0 auto;
+  margin-top: 8px;
+  padding-bottom: 2px;
+  font-size: 14px;
+  line-height: 1.2;
+  color: var(--muted);
+  border-bottom: 1px solid currentColor;
+}
+
+.back-link:hover {
+  color: var(--black);
+}
+
+.back-link:focus-visible {
+  color: var(--black);
+  outline: 2px solid var(--black);
+  outline-offset: 4px;
+  border-bottom-color: transparent;
+}
+
+/* ========================================
+   Страница расчёта
+======================================== */
+
+.calc-page {
+  max-width: 1280px;
+  padding-top: 72px;
+  gap: 48px;
+  align-content: start;
+}
+
+.calc-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 32px;
+}
+
+.calc-head h1 {
+  max-width: 780px;
+  margin-bottom: 24px;
+}
+
+.calc-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 390px;
+  gap: 28px;
+  align-items: start;
+}
+
+.calc-form {
+  display: grid;
+  gap: 14px;
+}
+
+/* ========================================
+   Блоки формы
+======================================== */
+
+.form-block {
+  min-width: 0;
+  padding: 26px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+}
+
+.form-block h2 {
+  margin-bottom: 22px;
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+
+.field {
+  min-width: 0;
+  margin-bottom: 20px;
+  display: grid;
+  gap: 8px;
+}
+
+.field:last-child {
+  margin-bottom: 0;
+}
+
+.field__label {
+  display: block;
+  font-size: 14px;
+  line-height: 1.25;
+  color: var(--text);
+}
+
+.field__note {
+  max-width: 680px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 15px;
+  color: var(--text);
+  background: #fbfbfb;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  outline: none;
+}
+
+select {
+  padding-right: 44px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%23747474' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+}
+
+textarea {
+  resize: vertical;
+  line-height: 1.45;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--line-dark);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--black);
+  background: var(--white);
+}
+
+input:disabled,
+select:disabled {
+  color: var(--muted);
+  background: var(--soft);
+  cursor: not-allowed;
+}
+
+input[readonly] {
+  color: var(--text);
+  background: var(--soft);
+  cursor: default;
+}
+
+input[readonly]:focus {
+  border-color: var(--line-dark);
+  background: var(--soft);
+}
+
+/* ========================================
+   Сетки формы
+======================================== */
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.field-grid > .field {
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.form-block > .field-grid:not(.is-hidden),
+.form-block > .conditional-block:not(.is-hidden) {
+  margin-bottom: 20px;
+}
+
+.form-block > .field-grid:last-child,
+.form-block > .conditional-block:last-child {
+  margin-bottom: 0;
+}
+
+.field-grid--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* ========================================
+   Условные состояния и предупреждения
+======================================== */
+
+.is-hidden {
+  display: none !important;
+}
+
+.field-warning {
+  margin: 4px 0 0;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--black);
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-line);
+  border-radius: 14px;
+}
+
+/* Индивидуальная раскладка: убираем двойной нижний отступ у поля
+   и отделяем информационное сообщение единым вертикальным ритмом. */
+#customPatternField {
+  margin-bottom: 0;
+}
+
+#customPatternField .file-upload-box {
+  margin-top: 16px;
+  margin-bottom: 0;
+  display: grid;
+  gap: 8px;
+}
+
+#customPatternWarning:not(.is-hidden) {
+  margin-top: 24px;
+}
+
+/* ========================================
+   Инженерная доска: служебные элементы
+======================================== */
+
+.flooring-page .page-head {
+  max-width: none;
+}
+
+.autocomplete-field {
+  position: relative;
+}
+
+.autocomplete-field input {
+  padding-right: 40px;
+}
+
+.autocomplete-clear {
+  position: absolute;
+  z-index: 2;
+  right: 12px;
+  top: 50%;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.autocomplete-clear:hover,
+.autocomplete-clear:focus-visible {
+  color: var(--text);
+  background: var(--soft);
+  outline: none;
+}
+
+.save-status {
+  min-height: 18px;
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+  text-align: center;
+}
+
+
+/* ========================================
+   Панель расчёта
+======================================== */
+
+.spec-panel {
+  position: sticky;
+  top: 24px;
+}
+
+.spec-panel__inner {
+  padding: 26px;
+  background: var(--white);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+}
+
+.spec-panel .kicker {
+  color: var(--muted);
+}
+
+.spec-title {
+  margin: 0 0 24px;
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+}
+
+.empty-spec {
+  min-height: 180px;
+  padding: 22px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--muted);
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+
+.spec-content {
+  display: block;
+}
+
+.spec-list {
+  margin: 0;
+  display: grid;
+  gap: 0;
+}
+
+.spec-list div {
+  padding: 13px 0;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.spec-list dt {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.spec-list dd {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text);
+  text-align: right;
+}
+
+.spec-value-note {
+  display: block;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.formula-box {
+  margin-top: 22px;
+  padding: 16px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+
+.formula-box span {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.formula-box p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.total-box {
+  margin-top: 18px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 6px;
+}
+
+.total-box span {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.total-box strong {
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: -0.05em;
+}
+
+.total-box small {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.spec-note {
+  margin: 18px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+/* ========================================
+   Кнопки
+======================================== */
+
+.next-step-button {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 22px;
+  padding: 13px 16px;
+  font-size: 14px;
+  color: var(--white);
+  background: var(--black);
+  border: 1px solid var(--black);
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.next-step-button:hover {
+  background: #333333;
+}
+
+.next-step-button:focus-visible {
+  outline: 2px solid var(--black);
+  outline-offset: 3px;
+}
+
+.next-step-button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* ========================================
+   Загрузка файлов
+======================================== */
+
+.file-upload-box {
+  margin-bottom: 20px;
+}
+
+input[type="file"] {
+  min-height: 48px;
+  padding: 7px 10px;
+  overflow: hidden;
+  color: var(--text);
+  background: #fbfbfb;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+input[type="file"]:hover {
+  border-color: var(--line-dark);
+}
+
+input[type="file"]:focus {
+  border-color: var(--black);
+  background: var(--white);
+}
+
+input[type="file"]::file-selector-button {
+  min-height: 32px;
+  margin: 0 10px 0 0;
+  padding: 6px 11px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  line-height: 1.2;
+  color: var(--text);
+  background: var(--white);
+  border: 1px solid var(--line-dark);
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease;
+}
+
+input[type="file"]::file-selector-button:hover {
+  border-color: var(--black);
+  background: var(--soft);
+}
+
+.uploaded-files {
+  min-height: 48px;
+  margin-top: 10px;
+  padding: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--muted);
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.uploaded-files > span {
+  max-width: 100%;
+  padding: 7px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  color: var(--text);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.uploaded-file__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uploaded-file__remove {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.uploaded-file__remove:hover,
+.uploaded-file__remove:focus-visible {
+  color: var(--text);
+  background: var(--soft);
+  outline: none;
+}
+
+/* ========================================
+   Скрытый контент для доступности
+======================================== */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ========================================
+   Адаптивность
+======================================== */
+
+@media (max-width: 1100px) {
+  .field-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 980px) {
+  .calc-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .spec-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 760px) {
+  .start-page {
+    min-height: auto;
+    padding: 56px 20px 48px;
+    align-content: start;
+    gap: 48px;
+  }
+
+  h1 {
+    font-size: 48px;
+  }
+
+  .lead {
+    font-size: 19px;
+  }
+
+  .mode-card,
+  .product-card {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 22px;
+  }
+
+  .mode-card__action,
+  .product-card__action {
+    width: fit-content;
+  }
+
+  .product-card__number {
+    margin-bottom: -4px;
+  }
+
+  .page-head {
+    position: relative;
+    display: block;
+    padding-top: 40px;
+  }
+
+  .page-head .back-link {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-top: 0;
+  }
+
+  .calc-page {
+    padding-top: 56px;
+  }
+
+  .calc-head {
+    position: relative;
+    display: block;
+    padding-top: 40px;
+  }
+
+  .calc-head .back-link {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-top: 0;
+  }
+
+  .field-grid,
+  .field-grid--two {
+    grid-template-columns: 1fr;
+  }
+
+  .spec-list div {
+    grid-template-columns: 1fr;
+  }
+
+  .spec-list dd {
+    text-align: left;
+  }
+
+  .total-box strong {
+    font-size: 30px;
+  }
+
+  input[type="file"] {
+    padding: 7px 8px;
+  }
+
+  input[type="file"]::file-selector-button {
+    margin-right: 7px;
+    padding-right: 9px;
+    padding-left: 9px;
+  }
+
+  .uploaded-files {
+    padding: 12px;
+  }
+
+  .uploaded-files > span {
+    width: 100%;
+    border-radius: 10px;
+  }
+
+  .uploaded-file__name {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 420px) {
+  .start-page {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  h1 {
+    font-size: 42px;
+  }
+
+  .mode-card,
+  .product-card {
+    padding: 20px;
+    border-radius: 20px;
+  }
+
+  .mode-card__title,
+  .product-card__title {
+    font-size: 20px;
+  }
+}
+
+/* ========================================
+   Инженерная доска: валидация и полная спецификация
+======================================== */
+
+.field__error {
+  min-height: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #9f2f2f;
+}
+
+.field__error:empty {
+  display: none;
+}
+
+.field--invalid input,
+.field--invalid select,
+.field--invalid textarea {
+  border-color: #b45a55;
+  background: #fff8f7;
+}
+
+.field--invalid input:focus,
+.field--invalid select:focus,
+.field--invalid textarea:focus {
+  border-color: #8e302b;
+}
+
+.spec-list--full {
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
+}
+
+.spec-list--full dd {
+  overflow-wrap: anywhere;
+}
+
+.price-breakdown {
+  margin-top: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.price-breakdown > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  font-size: 13px;
+}
+
+.price-breakdown span {
+  color: var(--muted);
+}
+
+.price-breakdown strong {
+  font-size: 13px;
+  font-weight: 500;
+  text-align: right;
+}
+
+.next-step-button:disabled {
+  color: var(--muted);
+  background: var(--soft);
+  border-color: var(--line);
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+@media (max-width: 980px) {
+  .spec-list--full {
+    max-height: none;
+  }
+}
+
+
+/* Flooring: searchable veneer field */
+.autocomplete-control {
+  position: relative;
+}
+
+.autocomplete-menu {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid #d7d7d7;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14);
+}
+
+.autocomplete-option,
+.autocomplete-empty {
+  width: 100%;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.autocomplete-option {
+  cursor: pointer;
+}
+
+.autocomplete-option:hover,
+.autocomplete-option:focus-visible {
+  background: #f3f3f1;
+  outline: none;
+}
+
+.autocomplete-empty {
+  color: #747474;
+}
+
+
+/* ========================================
+   Инженерная доска: раскладка, размер и метраж
+======================================== */
+
+.form-subsection + .form-subsection {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.form-subsection__title {
+  margin: 0 0 16px;
+  font-size: 15px;
+  line-height: 1.25;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.area-summary {
+  margin-top: 4px;
+  padding: 16px 18px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 18px;
+  align-items: end;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.area-summary__label {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.area-summary__value {
+  grid-row: span 2;
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+}
+
+.area-summary__formula {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+@media (max-width: 720px) {
+  .area-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .area-summary__value {
+    grid-row: auto;
+  }
+}
+
+
+/* Блок цены инженерной доски */
+.field-action {
+  justify-self: start;
+  margin-top: 2px;
+  padding: 0;
+  color: var(--black);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+/* Краткий расчёт: компактный ритм внутри блока «Раскладка и метраж». */
+#quickFlooringForm .board-size-toggle {
+  margin-top: -20px;
+  margin-bottom: 0;
+}
+
+#quickFlooringForm .field-warning:not(.is-hidden) + .board-size-toggle {
+  margin-top: 24px;
+}
+
+#quickFlooringForm .quick-layout-options + .quick-area-subsection {
+  margin-top: 16px;
+  padding-top: 20px;
+}
+
+#quickFlooringForm .quick-area-subsection .area-summary {
+  margin-top: 16px;
+}
+
+/* Notes placed immediately after a summary/info card use one shared spacing pattern. */
+.area-summary + .field__note {
+  margin-top: 16px;
+}
+
+#quickFlooringForm .quick-waste-hint {
+  margin-top: 16px;
+}
+
+.price-preview {
+  margin-top: 18px;
+  padding: 14px 16px;
+  display: grid;
+  gap: 10px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.price-preview > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  font-size: 13px;
+}
+
+.price-preview span {
+  color: var(--muted);
+}
+
+.price-preview strong {
+  font-size: 14px;
+  font-weight: 600;
+  text-align: right;
+}
+.price-change-note {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+
+/* Flooring: grouped detailed specification */
+.spec-groups {
+  display: grid;
+  gap: 18px;
+}
+
+.spec-group {
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.spec-group:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.spec-group__title {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.spec-list--full .spec-list__nested {
+  padding-left: 18px;
+}
+
+.spec-list--full .spec-list__nested dt::before {
+  content: "— ";
+  color: var(--muted);
+}
+
+.spec-list--full .spec-list__nested--2 {
+  padding-left: 36px;
+}
+
+.spec-positions {
+  display: grid;
+}
+
+.spec-position-block {
+  padding: 16px 0 4px;
+  border-top: 1px solid var(--line);
+}
+
+.spec-position-block:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.spec-position-block__title {
+  margin: 0 0 4px;
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.spec-group--total .total-box {
+  margin-top: 0;
+}
+
+/* Модальное окно после скачивания спецификации */
+.download-modal {
+  width: min(560px, calc(100% - 32px));
+  max-width: none;
+  padding: 0;
+  border: 0;
+  border-radius: 24px;
+  color: var(--text);
+  background: #ffffff;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
+}
+
+.download-modal::backdrop {
+  background: rgba(0, 0, 0, 0.48);
+}
+
+.download-modal__content {
+  position: relative;
+  padding: 40px;
+}
+
+.download-modal__close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--text);
+  background: transparent;
+  font: inherit;
+  font-size: 32px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.download-modal__close:hover {
+  background: var(--soft);
+}
+
+.download-modal__close:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.download-modal__title {
+  max-width: 430px;
+  margin: 0 48px 18px 0;
+  font-size: clamp(24px, 4vw, 32px);
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+}
+
+.download-modal__text,
+.download-modal__legal {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.download-modal__contacts {
+  margin: 28px 0;
+  padding: 20px;
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--soft);
+}
+
+.download-modal__contacts strong {
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.download-modal__contacts a {
+  width: fit-content;
+  color: inherit;
+  font-size: 15px;
+  line-height: 1.4;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.download-modal__legal {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 560px) {
+  .download-modal__content {
+    padding: 32px 24px 28px;
+  }
+
+  .download-modal__close {
+    top: 12px;
+    right: 12px;
+  }
+}
+/* Дополнительные элементы инженерной доски. Базовые стили сохранены из v1. */
+.static-value,
+.price-reference {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fbfbfb;
+}
+
+.static-value {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 12px 14px;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.price-reference {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  margin: 16px 0;
+}
+
+.price-reference > span,
+.price-reference > small { color: var(--muted); }
+.price-reference > strong { font-size: 24px; line-height: 1.15; }
+.price-reference .field-action { margin-top: 8px; }
+.price-reference--result { margin-top: 20px; margin-bottom: 0; }
+.subheading { margin: 0 0 10px; font-size: 15px; }
+.dynamic-adjustments { display: grid; gap: 10px; margin-bottom: 16px; }
+.dynamic-adjustment-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fbfbfb;
+  font-size: 14px;
+}
+.dynamic-adjustment-row__label { line-height: 1.4; }
+.dynamic-adjustment-row__right {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+.inline-percent-control { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.inline-percent-control input { width: 150px; min-height: 38px; padding: 8px 10px; text-align: right; box-sizing: border-box; }
+.adjustment-manual { color: var(--muted); font-size: 12px; line-height: 1.3; }
+.adjustment-reset {
+  padding: 0;
+  color: var(--black);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.selection-options { display: grid; gap: 14px; margin-top: 18px; }
+.selection-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fbfbfb;
+  cursor: pointer;
+}
+.selection-option input { width: 18px; min-width: 18px; height: 18px; margin: 1px 0 0; padding: 0; }
+.selection-option span { display: grid; gap: 3px; }
+.selection-option strong { font-size: 14px; }
+.selection-option small { color: var(--muted); }
+#finalUnitPriceInput { font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+@media (max-width: 720px) {
+  .dynamic-adjustment-row { align-items: stretch; flex-direction: column; }
+  .dynamic-adjustment-row__right { justify-items: start; }
+}
+/* Detailed plate calculation: dimension block reused from the first prototype. */
+.size-block-note {
+  margin: -4px 0 18px;
+  max-width: 760px;
+}
+
+.size-rows {
+  display: grid;
+  gap: 16px;
+}
+
+.size-row {
+  padding: 18px;
+  background: #fbfbfb;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+
+.size-row.is-active {
+  border-color: var(--line-dark);
+  background: var(--white);
+}
+
+.size-row__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.size-row__header strong {
+  font-size: 16px;
+  line-height: 1.25;
+  font-weight: 500;
+}
+
+.size-row__remove {
+  min-height: 34px;
+  padding: 7px 11px;
+  font-size: 12px;
+  line-height: 1.2;
+  color: var(--muted);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.size-row__remove:hover { color: var(--text); border-color: var(--black); }
+.size-row__remove:disabled { opacity: 0.35; cursor: default; background: var(--soft); border-color: var(--line); }
+
+.standard-size-list {
+  margin: 0 0 28px;
+  padding: 18px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+
+.standard-size-list--row {
+  margin: 16px 0 14px;
+  padding: 14px;
+  border-radius: 14px;
+}
+
+.standard-size-list .field__label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 15px;
+  line-height: 1.25;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.standard-size-values {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.standard-size-values > span,
+.standard-size-choice {
+  min-width: 0;
+  padding: 9px 10px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.25;
+  font-weight: 400;
+  color: var(--text);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.standard-size-choice {
+  cursor: pointer;
+  transition: border-color 0.16s ease, background-color 0.16s ease, transform 0.16s ease;
+}
+
+.standard-size-choice:hover {
+  border-color: var(--black);
+  background: #fbfbfb;
+  transform: translateY(-1px);
+}
+
+.standard-size-choice:focus-visible {
+  outline: 2px solid var(--black);
+  outline-offset: 2px;
+  border-color: var(--black);
+}
+
+.standard-size-choice.is-selected {
+  border-color: var(--black);
+  background: var(--white);
+  box-shadow: inset 0 0 0 1px var(--black);
+}
+
+.size-row__custom-toggle {
+  margin-top: 12px;
+}
+
+.field-grid--size-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(130px, 170px);
+  gap: 12px;
+  align-items: start;
+}
+
+.field-grid--size-row .field { margin-bottom: 0; }
+.field-grid--size-row input[readonly] { background: var(--soft); }
+
+.size-row__result {
+  max-width: 440px;
+  margin-top: 14px;
+}
+
+.size-row__extra {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 12px;
+}
+
+.toggle-line {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 9px;
+  font-size: 14px;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.toggle-line input {
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+}
+
+.size-row__details {
+  display: grid;
+  gap: 14px;
+  padding-top: 2px;
+}
+
+.add-size-row-button {
+  width: fit-content;
+  min-height: 44px;
+  margin-top: 16px;
+  padding: 10px 16px;
+  font-size: 14px;
+  line-height: 1.2;
+  border-radius: 12px;
+}
+
+@media (max-width: 900px) {
+  .standard-size-values { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .field-grid--size-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px) {
+  .standard-size-values { grid-template-columns: 1fr; }
+  .field-grid--size-row { grid-template-columns: 1fr; }
+  .size-row__header { align-items: flex-start; }
+}
+
+/* Engineering flooring: one spacing rule for content revealed by text-action toggles. */
+.field-reveal-target {
+  margin-top: 20px;
+}
+
+#priceWarnings strong { display: block; margin-bottom: 8px; }
+#priceWarnings ul { margin: 0; padding-left: 20px; }
+#priceWarnings li + li { margin-top: 6px; }
+
+.spec-inline-note {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+@media (max-width: 900px) {
+  .standard-size-values { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .field-grid--size-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .size-row__actions { padding-top: 0; }
+}
+
+@media (max-width: 560px) {
+  .standard-size-values { grid-template-columns: 1fr; }
+  .field-grid--size-row { grid-template-columns: 1fr; }
+  .size-row__actions { padding-top: 0; }
+}
+
+/* Detailed plate calculation: additional UI primitives reused from the first prototype. */
+.standard-size-values span:not(:last-child)::after {
+  display: none;
+}
+
+.standard-size-values [data-standard-size]:active {
+  transform: translateY(0);
+}
+
+.conditional-block {
+  display: grid;
+  gap: 20px;
+}
+
+.conditional-block > .field,
+.conditional-block > .field-warning {
+  margin-bottom: 0;
+}
+
+.conditional-block > .field-warning {
+  margin-top: 0;
+}
+
+.field-status {
+  margin-top: 12px;
+  padding: 13px 14px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--muted);
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.field-status--ok {
+  color: var(--text);
+  background: #fbfbfb;
+  border-color: var(--line-dark);
+}
+
+.field-status--warning {
+  color: var(--text);
+  background: #f1f1ee;
+  border-color: var(--line-dark);
+}
+
+.secondary-button {
+  min-height: 34px;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.secondary-button:hover {
+  border-color: var(--black);
+}
+
+.secondary-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+
+/* Panels: standard sizes use the common responsive grid — two columns on desktop, one on mobile. */
+.standard-size-values {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.standard-size-pair {
+  min-width: 0;
+  width: 100%;
+}
+
+.standard-size-pair .standard-size-choice {
+  width: 100%;
+}
+
+@media (max-width: 560px) {
+  .standard-size-values {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Detailed panels: transparent technological operations and finish overrides. */
+.tech-operations-list {
+  margin-bottom: 0;
+}
+
+.finish-position-toggle {
+  margin-top: 16px;
+}
+
+.finish-position-overrides {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.finish-position-card {
+  padding: 16px;
+  background: #fbfbfb;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.finish-position-card__head {
+  margin-bottom: 14px;
+}
+
+.finish-position-card__head strong {
+  font-size: 15px;
+  line-height: 1.3;
+  font-weight: 500;
+}
+
+.finish-position-card .field:last-child {
+  margin-bottom: 0;
+}
+
+.finish-position-details {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+
+/* Компактная ручная стоимость основы: продолжение строки выбора основы. */
+.manual-base-price-inline {
+  margin-top: -8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+
+.manual-base-price-inline__note {
+  margin: 0 0 2px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.manual-base-price-inline__field {
+  margin-bottom: 0;
+}
+
+.manual-base-price-error {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--black);
+}
+
+#manualBasePriceInput[aria-invalid="true"] {
+  border-color: var(--black);
+}
+
+@media (max-width: 760px) {
+  .manual-base-price-inline {
+    grid-template-columns: 1fr;
+    margin-top: -4px;
+  }
+}
+
+/* Specification tables: existing form controls and visual tokens. */
+.specification-page > .form-block { margin-bottom: 20px; }
+.specification-page .spec-table-wrap { overflow-x: auto; margin: 16px 0; }
+.specification-page table { width: 100%; border-collapse: collapse; font-size: 12px; line-height: 1.5; }
+.specification-page th, .specification-page td { border: 1px solid var(--line); padding: 10px; vertical-align: top; text-align: left; white-space: pre-line; min-width: 110px; }
+.specification-page th { background: var(--soft); }
+.specification-page td:last-child button { display: block; margin-bottom: 6px; }
+.specification-page td:has([data-spec-source]) { min-width: 240px; white-space: normal; }
+.specification-page td .field { margin-bottom: 14px; }
+.specification-page td .field-grid { display: block; }
+.specification-page td .autocomplete-menu { position: static; max-height: 240px; }
+.specification-page .spec-services { display: flex; flex-wrap: wrap; gap: 16px; margin: 16px 0; }
+.specification-page .spec-services label { display: flex; align-items: center; gap: 8px; }
+.specification-page .spec-services input { width: auto; }
+
+/* Отметки для согласования неподтверждённых допущений в рабочем прототипе. */
+.quick-panels-page .prototype-review-note,
+.base-production-note {
+  display: block;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #c43a3a;
+  border-radius: 8px;
+  background: #fff1f1;
+  color: #982323;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.quick-panels-page .prototype-review-note strong {
+  font-weight: 700;
+}
+
+/* Схема сторон для подробного расчёта плит. */
+.edge-side-diagram {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 80px minmax(0, 1fr);
+  grid-template-rows: auto 80px auto;
+  gap: 8px;
+  align-items: center;
+  justify-items: center;
+  width: 100%;
+  max-width: 340px;
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+}
+.edge-side-diagram__top { grid-area: 1 / 2; }
+.edge-side-diagram__left { grid-area: 2 / 1; }
+.edge-side-diagram__square {
+  grid-area: 2 / 2;
+  width: 80px;
+  height: 80px;
+  border: 1px solid currentColor;
+}
+.edge-side-diagram__right { grid-area: 2 / 3; }
+.edge-side-diagram__bottom { grid-area: 3 / 2; }

@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Плитные материалы и изделия — подробный расчёт Woodstock</title>
+  <link rel="stylesheet" href="../../css/main.css?v=20261106-edge-side-diagram" />
+</head>
+<body>
+  <main class="start-page calc-page plate-page">
+    <header class="page-head calc-head">
+      <div class="page-head__content">
+        <p class="kicker">WOODSTOCK · Подробный расчёт</p>
+        <h1>Плитные материалы и изделия</h1>
+        <p class="lead">Единый расчёт для плит, полуфабрикатов и деталей по фактическим параметрам позиции.</p>
+      </div>
+      <a class="back-link" href="./product-type.html">Назад</a>
+    </header>
+
+    <section class="calc-layout">
+      <form class="calc-form" id="panelForm" novalidate>
+        <section class="form-block">
+          <h2>Основа</h2>
+          <div class="field-grid field-grid--two">
+            <label class="field">
+              <span class="field__label">Основа</span>
+              <select id="baseSelect"><option value="">Выберите основу</option></select>
+            </label>
+
+            <div class="field">
+              <span class="field__label">Толщина, мм</span>
+              <select id="baseThicknessSelect" disabled>
+                <option value="">Сначала выберите основу</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-grid field-grid--two calibration-fields" id="calibrationFields">
+            <label class="field">
+              <span class="field__label">Калибровка основы</span>
+              <select id="calibrationSelect">
+                <option value="no">Не нужна</option>
+                <option value="yes">Нужна</option>
+              </select>
+              <span class="field__note is-hidden" id="calibrationRequiredNote">Калибровка обязательна для выбранной основы.</span>
+            </label>
+            <label class="field is-hidden" id="calibrationTargetField">
+              <span class="field__label">Толщина основы после калибровки, мм</span>
+              <input id="calibrationTargetInput" type="number" min="0.1" step="0.1" inputmode="decimal" />
+              <span class="field__error" id="calibrationTargetError"></span>
+            </label>
+            <label class="field is-hidden" id="calibrationDepthField">
+              <span class="field__label">Съём при калибровке, мм</span>
+              <input id="calibrationDepthInput" type="number" step="0.1" inputmode="decimal" readonly aria-readonly="true" />
+              <span class="field__note" id="calibrationDepthNote">Рассчитывается автоматически: исходная толщина основы − толщина после калибровки. Тариф 150 ₽/м² за каждый 1 мм съёма.</span>
+              <span class="field__error" id="calibrationDepthError"></span>
+            </label>
+          </div>
+          <p class="field-warning is-hidden" id="heavyPlateWarning"></p>
+          <p class="base-production-note is-hidden" id="baseProductionCostHint"></p>
+        </section>
+
+        <section class="form-block">
+          <h2>Шпон</h2>
+
+          <div class="field-grid field-grid--two">
+            <label class="field" id="veneerTypeField">
+              <span class="field__label">Тип шпона</span>
+              <select id="veneerTypeSelect">
+                <option value="">Выберите тип шпона</option>
+              </select>
+            </label>
+
+            <div class="field autocomplete-field" id="veneerAField">
+              <label class="field__label" id="veneerAInputLabel" for="veneerAInput">Порода на лицевой стороне</label>
+              <div class="autocomplete-control">
+                <input id="veneerAInput" type="text" autocomplete="off" placeholder="Введите наименование шпона" aria-controls="veneerASuggestions" aria-expanded="false" />
+                <button class="autocomplete-clear is-hidden" id="veneerAClear" type="button" aria-label="Очистить материал лицевой стороны">×</button>
+                <div class="autocomplete-menu is-hidden" id="veneerASuggestions" role="listbox"></div>
+              </div>
+              <span class="field__error" id="veneerAError"></span>
+            </div>
+          </div>
+
+          <div class="field-grid field-grid--two is-hidden" id="veneerSelectionDetailsGrid">
+            <label class="field is-hidden" id="veneerThicknessField">
+              <span class="field__label">Толщина, мм</span>
+              <select id="veneerThicknessSelect"></select>
+              <span class="field__error" id="veneerThicknessError"></span>
+            </label>
+
+            <label class="field is-hidden" id="veneeredSidesField">
+              <span class="field__label">Фанеровка</span>
+              <select id="veneeredSidesSelect">
+                <option value="1">1 сторона</option>
+                <option value="2">2 стороны</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="field-grid field-grid--two is-hidden" id="veneerSideBGrid">
+            <label class="field is-hidden" id="reverseSideField">
+              <span class="field__label">Обратная сторона</span>
+              <select id="reverseSideSelect">
+                <option value="rough">Черновой шпон</option>
+                <option value="paper">Бумага</option>
+              </select>
+              <span class="field__error" id="reverseSideHint"></span>
+            </label>
+          </div>
+
+          <div class="field-grid field-grid--two is-hidden" id="veneerBFields">
+            <label class="field">
+              <span class="field__label">Порода на обратной стороне</span>
+              <select id="veneerBModeSelect">
+                <option value="same">Такой же, как лицевая сторона</option>
+                <option value="other">Другой материал</option>
+                <option value="rough" hidden disabled>Черновой шпон</option>
+              </select>
+              <span class="field__error" id="veneerBModeHint"></span>
+            </label>
+            <div class="field autocomplete-field is-hidden" id="veneerBSearchField">
+              <label class="field__label" id="veneerBInputLabel" for="veneerBInput">Другой шпон — обратная сторона</label>
+              <div class="autocomplete-control">
+                <input id="veneerBInput" type="text" autocomplete="off" placeholder="Введите наименование материала" aria-controls="veneerBSuggestions" aria-expanded="false" />
+                <button class="autocomplete-clear is-hidden" id="veneerBClear" type="button" aria-label="Очистить шпон обратной стороны">×</button>
+                <div class="autocomplete-menu is-hidden" id="veneerBSuggestions" role="listbox"></div>
+              </div>
+              <span class="field__error" id="veneerBError"></span>
+            </div>
+            <label class="field is-hidden" id="veneerBRoughThicknessField">
+              <span class="field__label">Толщина чернового шпона обратной стороны</span>
+              <select id="veneerBRoughThicknessSelect"><option value="">Выберите толщину</option></select>
+            </label>
+          </div>
+
+          <div class="field-grid field-grid--two is-hidden" id="veneerLayoutGrid">
+            <label class="field is-hidden" id="veneerCutField">
+              <span class="field__label">Тип рисунка лицевой стороны</span>
+              <select id="veneerCutSelect" aria-describedby="veneerCutHint"><option value="">Выберите тип рисунка</option></select>
+              <span class="field__note" id="veneerCutHint"><strong>Радиальный.</strong> Рисунок из ровных полос, спокойный и однородный.<br><strong>Тангенциальный.</strong> Рисунок из дуг и волн, яркий и живой. Листы не похожи друг на друга.</span>
+              <span class="field__error" id="veneerCutError"></span>
+            </label>
+            <label class="field is-hidden" id="layoutField">
+              <span class="field__label">Раскладка / рисунок шпона — лицевая сторона</span>
+              <select id="layoutSelect"><option value="">Выберите раскладку</option></select>
+              <span class="field__error" id="layoutError"></span>
+            </label>
+          </div>
+
+          <div class="field-grid field-grid--two" id="backVeneerLayoutGrid">
+            <label class="field is-hidden" id="veneerBCutField">
+              <span class="field__label">Тип рисунка обратной стороны</span>
+              <select id="veneerBCutSelect" aria-describedby="veneerBCutHint"><option value="">Выберите тип рисунка</option></select>
+              <span class="field__note" id="veneerBCutHint"><strong>Радиальный.</strong> Рисунок из ровных полос, спокойный и однородный.<br><strong>Тангенциальный.</strong> Рисунок из дуг и волн, яркий и живой. Листы не похожи друг на друга.</span>
+              <span class="field__error" id="veneerBCutError"></span>
+            </label>
+          <label class="field is-hidden" id="layoutBField">
+            <span class="field__label">Раскладка / рисунок шпона — обратная сторона</span>
+            <select id="layoutBSelect"><option value="">Как на лицевой стороне</option></select>
+          </label>
+          </div>
+
+          <div class="conditional-block is-hidden" id="layoutTzFields">
+            <label class="field">
+              <span class="field__label">Комментарий к раскладке</span>
+              <textarea id="layoutTzComment" rows="3" placeholder="Опишите требования к раскладке"></textarea>
+            </label>
+            <div class="file-upload-box">
+              <label class="field__label" for="layoutTzFiles">Файлы к раскладке</label>
+              <input id="layoutTzFiles" type="file" multiple accept=".pdf,.dwg,.dxf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" />
+              <span class="field__note">Добавьте чертёж, схему или техническое задание.</span>
+              <div class="uploaded-files is-hidden" id="layoutTzFileNames">Файлы не выбраны</div>
+            </div>
+            <p class="field__error is-hidden" id="layoutTzError"></p>
+          </div>
+
+          <div class="conditional-block is-hidden" id="veneerInfoMessages">
+            <p class="field-warning is-hidden" id="readyShirtThicknessWarning"></p>
+            <p class="field-warning is-hidden" id="mixMatchWarning"></p>
+            <p class="field-warning is-hidden" id="designLayoutWarning"></p>
+          </div>
+        </section>
+
+        <section class="form-block">
+          <h2>Размер и количество</h2>
+          <div class="size-rows" id="sizeRows"></div>
+          <p class="field__error is-hidden" id="sizeBlockError"></p>
+          <button class="secondary-button add-size-row-button" id="addSizeRowBtn" type="button">Добавить ещё позицию</button>
+        </section>
+
+        <section class="form-block">
+          <h2>Кромка</h2>
+          <label class="field">
+            <span class="field__label">Потребуется кромка?</span>
+            <select id="edgeModeSelect">
+              <option value="none">Без кромки</option>
+              <option value="attached">Облицовка деталей кромкой</option>
+              <option value="separate">Кромка в рулоне</option>
+            </select>
+          </label>
+
+          <div class="conditional-block is-hidden" id="attachedEdgeFields">
+            <div class="field-grid field-grid--two">
+              <label class="field">
+                <span class="field__label">Стороны облицовки</span>
+                <select id="edgeSidesSelect" aria-describedby="edgeSideDiagram">
+                  <option value="">Выберите стороны облицовки</option>
+                </select>
+                <span class="edge-side-diagram" id="edgeSideDiagram" role="img" aria-label="Схема сторон детали: сверху — Длина, верх; снизу — Длина, низ; слева — Ширина, лево; справа — Ширина, право.">
+                  <span class="edge-side-diagram__top">Длина, верх</span>
+                  <span class="edge-side-diagram__left">Ширина, лево</span>
+                  <span class="edge-side-diagram__square" aria-hidden="true"></span>
+                  <span class="edge-side-diagram__right">Ширина, право</span>
+                  <span class="edge-side-diagram__bottom">Длина, низ</span>
+                </span>
+              </label>
+              <label class="field">
+                <span class="field__label">Тип кромки</span>
+                <select id="edgeTypeSelect">
+                  <option value="">Выберите тип кромки</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="field-grid field-grid--two">
+              <div class="field autocomplete-field">
+                <label class="field__label" for="edgeMaterialInput">Порода</label>
+                <div class="autocomplete-control">
+                  <input id="edgeMaterialInput" type="text" autocomplete="off" placeholder="Сначала выберите тип кромки" aria-controls="edgeMaterialSuggestions" aria-expanded="false" />
+                  <button class="autocomplete-clear is-hidden" id="edgeMaterialClear" type="button" aria-label="Очистить наименование кромки">×</button>
+                  <div class="autocomplete-menu is-hidden" id="edgeMaterialSuggestions" role="listbox"></div>
+                </div>
+                <span class="field__note">Подставляется по шпону лицевой стороны. Можно выбрать другой материал. Цена берётся из прайса кромки.</span>
+                <span class="field__error" id="edgeMaterialError"></span>
+              </div>
+
+              <label class="field is-hidden" id="edgeThicknessField">
+                <span class="field__label">Толщина, мм</span>
+                <select id="edgeThicknessSelect">
+                  <option value="">Выберите толщину кромки</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="field-grid field-grid--two">
+              <label class="field" id="edgeWidthField">
+                <span class="field__label">Ширина, мм</span>
+                <select id="edgeWidthSelect" disabled>
+                  <option value="">Выберите позицию кромки</option>
+                </select>
+              </label>
+              <label class="field is-hidden" id="edgeOrderWidthField">
+                <span class="field__label">Ширина, мм</span>
+                <input id="edgeOrderWidthInput" type="number" min="1" step="1" inputmode="decimal" />
+                <span class="field__note">Предложена ширина по толщине детали; можно изменить. Цена заказной кромки требует согласования.</span>
+              </label>
+            </div>
+
+            <div class="field-grid field-grid--two">
+              <select id="edgeBevelSelect" hidden disabled aria-hidden="true">
+                <option value="no">Нет</option>
+              </select>
+              <div class="field">
+                <span class="field__label">Расчётный метраж</span>
+                <p class="field__note" id="attachedEdgeMetersSummary">—</p>
+                <p class="field__note" id="edgeCostSummary">—</p>
+              </div>
+            </div>
+
+            <button class="secondary-button finish-position-toggle" id="positionEdgeToggle" type="button" aria-expanded="false">Настроить кромку по позициям</button>
+            <div class="finish-position-overrides is-hidden" id="positionEdgeOverrides"></div>
+          </div>
+
+          <div class="conditional-block is-hidden" id="separateEdgeFields">
+            <label class="field"><span class="field__label">Торцы для расчёта метража</span><select id="separateEdgeSidesSelect"></select></label>
+            <div class="field-grid field-grid--two">
+              <label class="field">
+                <span class="field__label">Тип кромки</span>
+                <select id="separateEdgeTypeSelect">
+                  <option value="">Выберите тип кромки</option>
+                </select>
+              </label>
+              <label class="field">
+                <span class="field__label">Метраж к заказу, пог. м</span>
+                <input id="separateEdgeMetersInput" type="number" min="0.1" step="0.1" inputmode="decimal" />
+                <span class="field__note" id="separateEdgeCostSummary">—</span>
+                <span class="field__note" id="separateEdgeMetersSummary">Рассчитывается по размерам и количеству деталей; можно изменить вручную.</span>
+                <button class="secondary-button is-hidden" id="separateEdgeMetersReset" type="button">Вернуть автоматический метраж</button>
+                <span class="field__error" id="separateEdgeMetersError"></span>
+                <span class="field__note is-hidden" id="separateEdgeMetersWarning"></span>
+              </label>
+            </div>
+
+            <div class="field-grid field-grid--two">
+              <div class="field autocomplete-field">
+                <label class="field__label" for="separateEdgeMaterialInput">Порода</label>
+                <div class="autocomplete-control">
+                  <input id="separateEdgeMaterialInput" type="text" autocomplete="off" placeholder="Сначала выберите тип кромки" aria-controls="separateEdgeMaterialSuggestions" aria-expanded="false" />
+                  <button class="autocomplete-clear is-hidden" id="separateEdgeMaterialClear" type="button" aria-label="Очистить наименование кромки">×</button>
+                  <div class="autocomplete-menu is-hidden" id="separateEdgeMaterialSuggestions" role="listbox"></div>
+                </div>
+                <span class="field__note">Подставляется по шпону лицевой стороны. Можно выбрать другой материал. Цена берётся из прайса кромки.</span>
+                <span class="field__error" id="separateEdgeMaterialError"></span>
+              </div>
+
+              <label class="field is-hidden" id="separateEdgeThicknessField">
+                <span class="field__label">Толщина, мм</span>
+                <select id="separateEdgeThicknessSelect">
+                  <option value="">Выберите толщину кромки</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="field-grid field-grid--two">
+              <label class="field" id="separateEdgeWidthField">
+                <span class="field__label">Ширина, мм</span>
+                <select id="separateEdgeWidthSelect" disabled>
+                  <option value="">Выберите позицию кромки</option>
+                </select>
+              </label>
+              <label class="field is-hidden" id="separateEdgeOrderWidthField">
+                <span class="field__label">Ширина, мм</span>
+                <input id="separateEdgeOrderWidthInput" type="number" min="1" step="1" inputmode="decimal" />
+                <span class="field__note">Предложена ширина по толщине детали; можно изменить. Цена заказной кромки требует согласования.</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="conditional-block is-hidden" id="edgeCommentField">
+            <label class="field">
+              <span class="field__label">Комментарий</span>
+              <textarea id="edgeCommentInput" rows="3" aria-describedby="edgeSideCommentHint"></textarea>
+              <span class="field__note is-hidden" id="edgeSideCommentHint"><em>Укажите по схеме, какие стороны облицевать. Например: Длина, верх, длина, низ, ширина, лево.</em></span>
+              <span class="field__note">Укажите при необходимости цвет, артикул или другие требования к кромке.</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="form-block" hidden aria-hidden="true">
+          <div class="dynamic-adjustments tech-operations-list">
+            <div class="dynamic-adjustment-row">
+              <div class="dynamic-adjustment-row__label"><strong>Фанеровка</strong></div>
+              <div class="dynamic-adjustment-row__right"><strong id="techVeneeringSummary">—</strong></div>
+            </div>
+            <div class="dynamic-adjustment-row">
+              <div class="dynamic-adjustment-row__label"><strong>Шлифовка</strong> <select id="sandingSelect" aria-label="Шлифовка"><option value="yes">Да</option><option value="no">Нет</option></select></div>
+              <div class="dynamic-adjustment-row__right"><strong id="techSandingSummary">—</strong></div>
+            </div>
+            <div class="dynamic-adjustment-row">
+              <div class="dynamic-adjustment-row__label"><strong>Чистовой припил</strong></div>
+              <div class="dynamic-adjustment-row__right"><strong id="techCuttingSummary">Не требуется</strong></div>
+            </div>
+            <div class="dynamic-adjustment-row is-hidden" id="techGluingRow">
+              <div class="dynamic-adjustment-row__label"><strong>Склейка основы</strong></div>
+              <div class="dynamic-adjustment-row__right"><strong id="techGluingSummary">—</strong></div>
+            </div>
+            <div class="dynamic-adjustment-row is-hidden" id="techCalibrationRow">
+              <div class="dynamic-adjustment-row__label"><strong>Калибровка</strong></div>
+              <div class="dynamic-adjustment-row__right"><strong id="techCalibrationSummary">—</strong></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="form-block">
+          <h2>Финишное покрытие</h2>
+          <label class="field">
+            <span class="field__label">Финишное покрытие</span>
+            <select id="finishSelect"></select>
+          </label>
+
+          <div class="conditional-block is-hidden" id="finishParameterFields">
+            <div class="field-grid field-grid--two is-hidden" id="finishCommonFields">
+              <label class="field" id="finishSidesField">
+                <span class="field__label">Стороны финишного покрытия</span>
+                <select id="finishSidesSelect"></select>
+              </label>
+            </div>
+
+            <div class="conditional-block is-hidden" id="lacquerParameterFields">
+              <div class="field-grid field-grid--two">
+                <label class="field" id="lacquerExecutionField">
+                  <span class="field__label">Лаковое исполнение</span>
+                  <select id="lacquerExecutionSelect"></select>
+                </label>
+                <label class="field" id="lacquerGlossField">
+                  <span class="field__label">Степень блеска</span>
+                  <select id="lacquerGlossSelect"></select>
+                  <span class="field__error is-hidden" id="lacquerGlossError" data-validation-error="finishGloss"></span>
+                </label>
+                <label class="field" id="lacquerProcessField">
+                  <span class="field__label">Схема покрытия</span>
+                  <select id="lacquerProcessSelect"></select>
+                  <span class="field__error is-hidden" id="lacquerProcessError" data-validation-error="finishProcess"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="field-grid field-grid--two is-hidden" id="lacquerExtraFields">
+              <label class="field">
+                <span class="field__label">Тонировка</span>
+                <select id="toningSelect">
+                  <option value="no">Нет</option>
+                  <option value="yes">Да</option>
+                </select>
+              </label>
+              <label class="field">
+                <span class="field__label">Изолятор</span>
+                <select id="isolatorSelect">
+                  <option value="no">Нет</option>
+                  <option value="yes">Да</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="field-grid field-grid--two is-hidden" id="enamelParameterFields">
+              <label class="field">
+                <span class="field__label">Схема покрытия</span>
+                <select id="enamelVariantSelect"></select>
+                <span class="field__error is-hidden" id="enamelVariantError" data-validation-error="finishEnamel"></span>
+              </label>
+            </div>
+          </div>
+
+          <button class="secondary-button finish-position-toggle" id="positionFinishToggle" type="button" aria-expanded="false">Настроить финиш по позициям</button>
+          <div class="finish-position-overrides is-hidden" id="positionFinishOverrides"></div>
+        </section>
+
+        <section class="form-block">
+          <h2>Цена</h2>
+
+          <label class="field">
+            <span class="field__label">Условие клиента</span>
+            <select id="clientConditionSelect"></select>
+            <span class="field__note is-hidden" id="clientConditionNote"></span>
+          </label>
+
+          <div class="price-reference">
+            <span>Розничная цена, ₽/м²</span>
+            <strong id="retailPriceValue">—</strong>
+          </div>
+
+          <section class="is-hidden" id="priceAdjustmentsBlock">
+            <h3 class="subheading">Условия, влияющие на цену</h3>
+            <div class="dynamic-adjustments" id="priceAdjustmentsList"></div>
+          </section>
+
+          <label class="field is-hidden" id="manualDiscountField">
+            <span class="field__label">Ручная скидка, %</span>
+            <input id="manualDiscountInput" type="number" min="0" max="10" step="0.1" inputmode="decimal" value="0" />
+            <span class="field__note">Глобальная скидка на всю сумму отключена: ценовые корректировки должны относиться к соответствующим компонентам.</span>
+            <span class="field__error" id="manualDiscountError"></span>
+          </label>
+
+          <div class="price-reference price-reference--result" id="finalPriceField">
+            <span id="finalPriceLabel">Цена с учётом условий, ₽/м²</span>
+            <strong id="finalPriceValue">—</strong>
+            <small id="finalPriceNote"></small>
+          </div>
+
+          <!--
+            Расширенные права временно отключены до личного кабинета / ролевой модели:
+            ручное изменение прайсовой цены шпона, возврат розничной цены,
+            ручное редактирование автоматических скидок и ручной выбор ценового условия МДФ.
+            Прайсовые уровни в данных сохранены и используются только там, где условие
+            можно определить автоматически по подтверждённым данным.
+          -->
+        </section>
+
+        <section class="form-block">
+          <h2>Дополнительная информация</h2>
+          <label class="field">
+            <span class="field__label">Комментарий</span>
+            <textarea id="commentInput" rows="4" placeholder="Например: особенности цвета, требования к качеству или другие требования к позиции"></textarea>
+          </label>
+          <label class="field file-upload-box">
+            <span class="field__label">Файлы к позиции</span>
+            <input id="filesInput" type="file" multiple />
+            <span class="field__note">План, схема раскладки, визуализация или техническое задание.</span>
+            <div class="uploaded-files is-hidden" id="selectedFiles">Файлы не выбраны</div>
+          </label>
+        </section>
+      </form>
+
+      <aside class="spec-panel">
+        <div class="spec-panel__inner">
+          <p class="kicker">Расчёт позиции</p>
+          <h2 class="spec-title">Плитные материалы и изделия</h2>
+          <div class="spec-groups">
+            <section class="spec-group">
+              <h3 class="spec-group__title">Характеристики позиции</h3>
+              <dl class="spec-list spec-list--full" id="specCharacteristics"></dl>
+            </section>
+            <section class="spec-group">
+              <h3 class="spec-group__title">Размеры</h3>
+              <div id="specSizes" class="spec-positions"></div>
+            </section>
+            <section class="spec-group spec-group--total">
+              <h3 class="spec-group__title">Стоимость</h3>
+              <dl class="spec-list spec-list--full">
+                <div><dt id="specPricePerM2Label">Цена за м² с НДС</dt><dd id="specPricePerM2">—</dd></div>
+                <div><dt id="specPricePerPieceLabel">Цена за шт. / лист</dt><dd id="specPricePerPiece">—</dd></div>
+              </dl>
+              <div class="total-box"><span id="specTotalLabel">Итого с НДС</span><strong id="specTotal">—</strong><small id="specVat">В том числе НДС 22%: —</small></div>
+              <p id="specPartialNote" class="field__note is-hidden"></p>
+            </section>
+          </div>
+          <button class="next-step-button" id="addToSpecButton" type="button">Добавить в спецификацию</button>
+          <p class="save-status" id="saveStatus" aria-live="polite"></p>
+        </div>
+      </aside>
+    </section>
+  </main>
+  <script src="../../js/core/panels-core.js?v=20261028-edge-threshold"></script>
+  <script src="../../js/core/specification-state.js"></script>
+  <script src="../../js/specification-bridge.js"></script>
+  <script src="../../js/detailed-panels.js?v=20261109-audit-fixes"></script>
+</body>
+</html>

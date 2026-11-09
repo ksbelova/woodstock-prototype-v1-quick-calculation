@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Инженерная доска — подробный расчёт WOODSTOCK</title>
+  <link rel="stylesheet" href="../../css/main.css" />
+</head>
+<body>
+  <main class="start-page calc-page flooring-page">
+    <header class="page-head calc-head">
+      <div class="page-head__content">
+        <p class="kicker">WOODSTOCK · Подробный расчёт</p>
+        <h1>Инженерная доска</h1>
+        <p class="lead">Расчёт по выбранной позиции каталога, метражу доски и параметрам заказа.</p>
+      </div>
+      <a class="back-link" href="./product-type.html">Назад</a>
+    </header>
+
+    <section class="calc-layout">
+      <form class="calc-form" id="flooringForm" novalidate>
+        <section class="form-block">
+          <h2>Материал</h2>
+          <div class="field-grid field-grid--two">
+            <label class="field" id="materialTypeField">
+              <span class="field__label">Тип шпона</span>
+              <select id="materialTypeSelect">
+                <option value="">Выберите тип шпона</option>
+              </select>
+            </label>
+
+            <div class="field autocomplete-field" id="speciesField">
+              <label class="field__label" for="speciesInput">Наименование шпона</label>
+              <div class="autocomplete-control">
+                <input
+                  id="speciesInput"
+                  type="text"
+                  autocomplete="off"
+                  placeholder="Выберите шпон"
+                  aria-describedby="speciesSearchHint"
+                  aria-controls="speciesSuggestions"
+                  aria-expanded="false"
+                />
+                <button class="autocomplete-clear is-hidden" id="speciesClearButton" type="button" aria-label="Очистить наименование шпона">×</button>
+                <div class="autocomplete-menu is-hidden" id="speciesSuggestions" role="listbox"></div>
+              </div>
+              <span class="field__note" id="speciesSearchHint"></span>
+              <span class="field__error" id="speciesError"></span>
+            </div>
+          </div>
+
+          <div class="field-grid field-grid--two">
+            <label class="field" id="topLayerField">
+              <span class="field__label">Верхний слой</span>
+              <select id="topLayerSelect" disabled>
+                <option value="">Выберите верхний слой</option>
+              </select>
+              <span class="field__note" id="topLayerHint"></span>
+              <span class="field__error" id="topLayerError"></span>
+            </label>
+
+            <label class="field is-hidden" id="patternTypeField">
+              <span class="field__label">Тип рисунка</span>
+              <select id="patternTypeSelect" disabled>
+                <option value="">Выберите тип рисунка</option>
+              </select>
+              <span class="field__error" id="patternTypeError"></span>
+            </label>
+          </div>
+
+          <div class="field-grid field-grid--two">
+            <div class="field" id="baseThicknessField">
+              <span class="field__label">Нижний слой</span>
+              <div class="static-value" id="baseSummary">Влагостойкая фанера из берёзы · 12 мм</div>
+              <button class="field-action" id="baseThicknessToggle" type="button" aria-expanded="false" aria-controls="customBaseThicknessField">Указать другую толщину нижнего слоя</button>
+              <span class="field__error" id="baseThicknessError"></span>
+            </div>
+          </div>
+
+          <input id="sortingSelect" type="hidden" value="Select+" />
+
+          <div class="field field-reveal-target is-hidden" id="customBaseThicknessField">
+            <label class="field__label" for="baseThicknessInput">Толщина нижнего слоя, мм</label>
+            <input id="baseThicknessInput" type="number" min="8" max="21" step="0.1" inputmode="decimal" placeholder="8–21" />
+            <span class="field__note">При толщине нижнего слоя, отличной от 12 мм, стоимость увеличивается на 10%.</span>
+            <span class="field__error" id="baseThicknessInputError"></span>
+          </div>
+        </section>
+
+        <section class="form-block is-hidden" id="selectionSurchargeBlock">
+          <h2>Дополнительный отбор</h2>
+          <div class="selection-options" id="selectionSurchargeOptions"></div>
+        </section>
+
+        <section class="form-block">
+          <h2>Раскладка, размер и метраж</h2>
+
+          <div class="form-subsection">
+
+            <label class="field" id="patternField">
+              <span class="field__label">Раскладка</span>
+              <select id="patternSelect">
+                <option value="">Выберите раскладку</option>
+              </select>
+              <span class="field__error" id="patternError"></span>
+            </label>
+
+            <label class="field is-hidden" id="angleField">
+              <span class="field__label">Угол торцевого реза</span>
+              <select id="angleSelect">
+                <option value="">Выберите угол</option>
+              </select>
+              <span class="field__error" id="angleError"></span>
+            </label>
+
+            <div class="field is-hidden" id="customPatternField">
+              <label class="field__label" for="customPatternInput">Описание раскладки</label>
+              <textarea id="customPatternInput" rows="4" placeholder="Опишите желаемую раскладку и дополнительные требования"></textarea>
+              <span class="field__error" id="customPatternError"></span>
+
+              <div class="file-upload-box">
+                <label class="field__label" for="customPatternFileInput">Материалы к раскладке</label>
+                <input
+                  id="customPatternFileInput"
+                  type="file"
+                  multiple
+                  accept=".pdf,.dwg,.dxf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+                />
+                <span class="field__note">План, схема раскладки или техническое задание.</span>
+                <div class="uploaded-files is-hidden" id="customPatternFileName">Файлы не выбраны</div>
+              </div>
+            </div>
+
+            <p class="field-warning is-hidden" id="customPatternWarning">Индивидуальная раскладка требует согласования с производством.</p>
+          </div>
+
+          <div class="form-subsection">
+
+            <div class="field-grid field-grid--two">
+              <label class="field" id="widthField">
+                <span class="field__label">Ширина, мм</span>
+                <input
+                  id="widthInput"
+                  type="number"
+                  step="1"
+                  inputmode="numeric"
+                  placeholder="Сначала выберите раскладку"
+                  disabled
+                />
+                <span class="field__error" id="widthError"></span>
+              </label>
+
+              <label class="field" id="lengthField">
+                <span class="field__label" id="lengthLabel">Длина, мм</span>
+                <input
+                  id="lengthInput"
+                  type="number"
+                  step="1"
+                  inputmode="numeric"
+                  placeholder="Сначала выберите раскладку"
+                  disabled
+                />
+                <span class="field__error" id="lengthError"></span>
+              </label>
+            </div>
+
+            <p class="field-warning is-hidden" id="widthWarning">Для ширины более 130 мм расчёт требует подтверждения наличия подходящего материала.</p>
+          </div>
+
+          <div class="form-subsection">
+
+            <div class="field-grid field-grid--two">
+              <label class="field" id="boardAreaField">
+                <span class="field__label">Площадь помещения, м²</span>
+                <input id="boardAreaInput" type="number" min="0.01" step="0.01" inputmode="decimal" />
+                <span class="field__note">Площадь пола, на которую планируется укладка инженерной доски</span>
+                <span class="field__error" id="boardAreaError"></span>
+              </label>
+
+              <label class="field" id="wasteField">
+                <span class="field__label">Запас на укладку, %</span>
+                <input
+                  id="wasteInput"
+                  type="number"
+                  min="0"
+                  max="30"
+                  step="0.1"
+                  inputmode="decimal"
+                  placeholder="Сначала выберите раскладку"
+                  disabled
+                />
+                <span class="field__error" id="wasteError"></span>
+              </label>
+            </div>
+
+            <div class="area-summary" id="areaSummary" aria-live="polite">
+              <span class="area-summary__label">Итого к расчёту</span>
+              <strong class="area-summary__value" id="areaWithWasteValue">—</strong>
+              <span class="area-summary__formula" id="areaWithWasteFormula">Укажите площадь помещения.</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="form-block">
+          <h2>Финишное покрытие</h2>
+          <label class="field" id="coatingField">
+            <span class="field__label">Покрытие</span>
+            <select id="coatingSelect">
+              <option value="">Выберите покрытие</option>
+            </select>
+            <span class="field__note" id="coatingHint"></span>
+            <span class="field__error" id="coatingError"></span>
+          </label>
+          <label class="field is-hidden" id="glossField">
+            <span class="field__label" id="glossLabel">Степень блеска</span>
+            <select id="glossInput"></select>
+            <span class="field__note" id="glossHint"></span>
+            <span class="field__error" id="glossError"></span>
+          </label>
+        </section>
+
+        <section class="form-block">
+          <h2>Цена</h2>
+
+          <div class="field-grid field-grid--two">
+            <!--
+              Расширенные права (временно отключено до личного кабинета / ролевой модели):
+              <label class="field" id="clientTypeField">
+                <span class="field__label">Тип покупателя</span>
+                <select id="clientTypeSelect">
+                  <option value="client">Клиент</option>
+                  <option value="dealer">Дилер</option>
+                </select>
+              </label>
+            -->
+            <input id="clientTypeSelect" type="hidden" value="client" />
+
+            <label class="field" id="loyaltyField">
+              <span class="field__label">Ценовые условия</span>
+              <select id="loyaltySelect">
+                <option value="retail">Розничная цена</option>
+                <option value="loyalty">Скидка лояльности</option>
+                <option value="regular">Карта постоянного покупателя</option>
+                <option value="vip">VIP-карта</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="price-reference">
+            <span>Розничная цена</span>
+            <strong id="retailPriceValue">—</strong>
+            <!--
+              Расширенные права (временно отключено до личного кабинета / ролевой модели):
+              <button class="field-action is-hidden" id="customPriceToggle" type="button" aria-expanded="false" aria-controls="customPriceField">Изменить цену для расчёта</button>
+            -->
+          </div>
+
+          <!--
+            Расширенные права (временно отключено до личного кабинета / ролевой модели):
+            <label class="field is-hidden" id="customPriceField">
+              <span class="field__label" for="customPriceInput">Цена для расчёта, ₽/м²</span>
+              <input id="customPriceInput" type="text" inputmode="decimal" autocomplete="off" />
+              <button class="field-action" id="resetCustomPriceButton" type="button">Вернуть розничную цену</button>
+              <span class="field__error" id="customPriceError"></span>
+            </label>
+          -->
+          <input id="customPriceInput" type="hidden" value="" />
+
+          <section class="is-hidden" id="priceAdjustmentsBlock">
+            <h3 class="subheading">Условия, влияющие на цену</h3>
+            <div class="dynamic-adjustments" id="priceAdjustmentsList"></div>
+          </section>
+
+          <div class="price-reference price-reference--result" id="finalUnitPriceField">
+            <span>Цена с учётом условий</span>
+            <strong id="finalUnitPriceValue">—</strong>
+            <span class="field__error" id="finalUnitPriceError"></span>
+          </div>
+
+          <!-- Служебные поля сохранены для совместимости со спецификацией. -->
+          <input id="finalUnitPriceInput" type="hidden" value="" />
+          <input id="unitPriceInput" type="hidden" value="" />
+          <input id="discountInput" type="hidden" value="0" />
+          <input id="markupInput" type="hidden" value="0" />
+        </section>
+
+        <section class="form-block">
+          <h2>Дополнительная информация</h2>
+          <label class="field">
+            <span class="field__label">Комментарий</span>
+            <textarea id="commentInput" rows="4" placeholder="Дополнительные требования к инженерной доске"></textarea>
+          </label>
+          <label class="field file-upload-box">
+            <span class="field__label">Прикрепить файлы</span>
+            <input id="filesInput" type="file" multiple />
+            <span class="field__note">Чертёж, план, визуализация, техническое задание, таблица или другой файл по проекту.</span>
+            <div class="uploaded-files is-hidden" id="selectedFiles">Файлы не выбраны</div>
+          </label>
+        </section>
+      </form>
+
+      <aside class="spec-panel">
+        <div class="spec-panel__inner">
+          <p class="kicker">Расчёт позиции</p>
+          <h2 class="spec-title">Инженерная доска</h2>
+
+          <div class="spec-groups">
+            <section class="spec-group">
+              <h3 class="spec-group__title">Характеристики</h3>
+              <dl class="spec-list spec-list--full">
+                <div><dt>Нижний слой</dt><dd><span id="specBase">—</span><span class="spec-value-note is-hidden" id="specBaseNote">* Нестандартная толщина</span></dd></div>
+                <div><dt>Верхний слой</dt><dd id="specTopLayer">—</dd></div>
+                <div><dt>Толщина</dt><dd id="specThickness">—</dd></div>
+
+                <div><dt>Шпон</dt><dd></dd></div>
+                <div id="specSpeciesRow" class="spec-list__nested"><dt id="specSpeciesLabel">Наименование шпона</dt><dd id="specSpecies">—</dd></div>
+                <div id="specSpeciesNameRow" class="spec-list__nested is-hidden"><dt>Наименование</dt><dd id="specSpeciesName">—</dd></div>
+                <div id="specMaterialTypeRow" class="spec-list__nested"><dt>Тип шпона</dt><dd id="specMaterialType">—</dd></div>
+                <div class="spec-list__nested"><dt>Страна происхождения шпона</dt><dd>—</dd></div>
+                <div id="specPatternTypeRow" class="spec-list__nested is-hidden"><dt>Тип рисунка</dt><dd id="specPatternType">—</dd></div>
+                <div class="spec-list__nested"><dt>Сортировка</dt><dd id="specSorting">—</dd></div>
+
+                <div><dt>Ширина</dt><dd id="specWidth">—</dd></div>
+                <div><dt>Длина</dt><dd id="specLength">—</dd></div>
+                <div><dt>Наличие фаски</dt><dd id="specChamfer">—</dd></div>
+                <div><dt>Тип соединения</dt><dd id="specConnection">—</dd></div>
+
+                <div><dt>Раскладка</dt><dd id="specPattern">—</dd></div>
+                <div id="specAngleRow" class="spec-list__nested is-hidden"><dt>Угол торцевого реза</dt><dd id="specAngle">—</dd></div>
+                <div id="specCustomPatternRow" class="spec-list__nested is-hidden"><dt>Описание раскладки</dt><dd id="specCustomPattern">—</dd></div>
+                <div id="specCustomPatternFileRow" class="spec-list__nested is-hidden"><dt>Файлы индивидуальной раскладки</dt><dd id="specCustomPatternFile">—</dd></div>
+
+                <div><dt>Итого к расчёту</dt><dd id="specAreaWithWaste">—</dd></div>
+                <div class="spec-list__nested"><dt>Площадь помещения</dt><dd id="specBaseArea">—</dd></div>
+                <div class="spec-list__nested"><dt>Запас на укладку</dt><dd id="specWaste">—</dd></div>
+
+                <div><dt>Финишное покрытие</dt><dd id="specCoating">—</dd></div>
+                <div id="specGlossRow" class="spec-list__nested is-hidden"><dt>Степень блеска</dt><dd id="specGloss">—</dd></div>
+
+                <div><dt>Подходит для водяного тёплого пола</dt><dd id="specUnderfloorHeating">—</dd></div>
+                <div><dt>Конструкция</dt><dd>Запатентованная ламель WOODSTOCK</dd></div>
+
+                <div id="specCommentRow" class="is-hidden"><dt>Комментарий</dt><dd id="specComment">—</dd></div>
+                <div id="specFilesRow" class="is-hidden"><dt>Файлы</dt><dd id="specFiles">—</dd></div>
+              </dl>
+            </section>
+
+            <section class="spec-group spec-group--total">
+              <h3 class="spec-group__title">Стоимость</h3>
+              <dl class="spec-list spec-list--full">
+                <div><dt>Цена за м² с НДС</dt><dd id="specFinalUnitPrice">—</dd></div>
+              </dl>
+              <div class="total-box">
+                <span>Итого с НДС</span>
+                <strong id="specTotal">—</strong>
+                <small id="specVat">В том числе НДС 22%: —</small>
+              </div>
+            </section>
+          </div>
+
+          <p class="spec-note is-hidden" id="priceStatus"></p>
+          <p class="spec-note">Ориентировочный срок производства — 1,5 месяца с момента 100% предоплаты и утверждения спецификации.</p>
+
+          <button class="next-step-button" id="addToSpecButton" type="button">Добавить в спецификацию</button>
+          <p class="save-status" id="saveStatus" aria-live="polite"></p>
+        </div>
+      </aside>
+    </section>
+  </main>
+  <script src="../../js/core/flooring-core.js"></script>
+  <script src="../../js/core/specification-state.js"></script>
+  <script src="../../js/specification-bridge.js"></script>
+  <script src="../../js/detailed-flooring.js?v=20261020-specification"></script>
+</body>
+</html>

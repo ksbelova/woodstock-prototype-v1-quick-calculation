@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <meta
+    name="description"
+    content="Краткий и подробный расчёт стоимости изделий Woodstock."
+  />
+
+  <title>Калькулятор Woodstock</title>
+
+  <link rel="stylesheet" href="./css/main.css" />
+</head>
+
+<body>
+  <main class="start-page">
+    <section class="start-hero">
+      <p class="kicker">
+        Woodstock · Демо-версия
+      </p>
+
+      <h1>
+        Калькулятор стоимости изделий
+      </h1>
+
+      <p class="lead">
+        Выберите тип расчёта в зависимости от необходимой
+        детализации.
+      </p>
+
+      <p class="note">
+        Калькулятор позволяет рассчитать стоимость панелей,
+        мебельных фасадов и инженерной доски.
+      </p>
+    </section>
+
+    <section
+      class="mode-section"
+      aria-labelledby="calculation-mode-title"
+    >
+      <h2 id="calculation-mode-title">
+        Выберите тип расчёта
+      </h2>
+
+    <div class="mode-list">
+    <a
+        class="mode-card mode-card--active"
+        href="./pages/detailed/product-type.html"
+        data-calculation-mode="detailed"
+    >
+        <span class="mode-card__body">
+        <span class="mode-card__title">
+            Подробный расчёт
+        </span>
+
+        <span class="mode-card__text">
+            Для менеджера. Рассчитайте заказ с учётом производственных параметров,
+            индивидуальных условий и сформируйте спецификацию.
+        </span>
+        </span>
+
+        <span class="mode-card__action">
+        Перейти
+        </span>
+    </a>
+
+    <a
+        class="mode-card mode-card--active"
+        href="./pages/quick/product-type.html"
+        data-calculation-mode="quick"
+    >
+        <span class="mode-card__body">
+        <span class="mode-card__title">
+            Краткий расчёт
+        </span>
+
+        <span class="mode-card__text">
+            Для клиента на сайте. Оцените ориентировочную стоимость изделия по основным
+            параметрам.
+        </span>
+        </span>
+
+        <span class="mode-card__action">
+        Рассчитать
+        </span>
+    </a>
+    </div>
+    </section>
+  </main>
+
+  <script src="./js/start.js"></script>
+</body>
+</html>
