@@ -511,9 +511,11 @@
       paperOption.hidden = !paperAllowed;
       paperOption.disabled = !paperAllowed;
     }
-    const selectable = paperAllowed && Number(form.veneeredSidesSelect.value) === 1;
-    form.reverseSideField.classList.toggle("is-hidden", !selectable);
-    form.veneerSideBGrid.classList.toggle("is-hidden", !selectable);
+    const oneSide = Number(form.veneeredSidesSelect.value) === 1;
+    const visible = oneSide && (paperAllowed || isQuickStandardPanel());
+    if (isQuickStandardPanel()) form.reverseSideSelect.disabled = !paperAllowed;
+    form.reverseSideField.classList.toggle("is-hidden", !visible);
+    form.veneerSideBGrid.classList.toggle("is-hidden", !visible);
     const hint = el("quickPaperBackHint");
     if (hint) {
       hint.textContent = quickPaperBackResetHint;
