@@ -8,20 +8,23 @@
  const money=Core.formatMoney,number=v=>Number.isFinite(v)?new Intl.NumberFormat('ru-RU',{maximumFractionDigits:4}).format(v):'—';
  const allowed=standard?['mdf','dsp','gsp','plywood_water','plywood_light','plywood_flexible','blockboard']:wall?['mdf','dsp','gsp','plywood_water','plywood_light']:['mdf','dsp','plywood_water','plywood_light','blockboard'];
  window.WoodstockPanelsView={
-  allowBase:base=>Boolean(base)&&allowed.includes(base.id),
+  allowBase:base=>Boolean(base)&&(wall?base.id==='mdf':allowed.includes(base.id)),
   baseSelectable:base=>!base||['mdf','dsp'].includes(base.id),
   priceSensitivePatterns:true,
-  emptyInitialBase:true,
+  emptyInitialBase:!wall,
+  fixedWallConfiguration:wall,
+  sameBackLayout:standard,
+  faceThicknesses:wall?[0.6,1,1.5]:null,
   positionPricing:true,
   edgeVolumePricing:true,
   automaticOperations:true,
   transitionMinimumPieces:2,
-  allowLayout:layout=>layout.id!=="herringbone"&&(!standard||layout.id!=="custom"),
+  allowLayout:(layout,type)=>layout.id!=="herringbone"&&(!standard||layout.id!=="custom")&&(!standard||!["design","multi"].includes(type)||layout.id==="straight"),
   thicknesses:(base,values,data)=>(values||[]).filter(value=>{
    if(!base||!['mdf','dsp'].includes(base.id))return false;
    const key=String(value),mode=standard?'standard':'exact';
    if(base.id==='mdf'&&key==='24')return false; // Legacy standard rates AC23:AC24 conflict with the exact-price classification; confirmation pending.
-   if(wall&&!(base.id==='dsp'?key==='16':['10','12','16','6+6'].includes(key)))return false;
+   if(wall&&key!=='12')return false;
    const status=data.baseThicknessScenarioPriceModes?.[base.id]?.[key]?.[mode]||data.baseThicknessPriceModes?.[base.id]?.[key];
    const rates=standard?data.standardProductionRates:data.nonstandardRates;
    return status==='automatic'&&rates.some(rate=>rate.baseId===base.id&&String(rate.thickness)===key&&Number.isFinite(rate.ratePerM2));
@@ -233,6 +236,12 @@
   if(scenario==='details') api.form.edgeBevelSelect.value='no';
   // These are the existing detailed fields, hidden for the shortened client scenario.
   ['toningSelect','isolatorSelect','positionFinishToggle','positionEdgeToggle','lacquerExecutionSelect','lacquerProcessSelect','enamelVariantSelect','edgeOrderPriceInput','separateEdgeOrderPriceInput'].forEach(id=>{$(id)?.closest('.field')?.setAttribute('data-quick-hidden','');});
+  if(wall){
+   [api.form.baseSelect,api.form.edgeModeSelect].forEach(field=>field.closest('.form-block').setAttribute('data-quick-hidden',''));
+   api.form.finishSelect.closest('.field').setAttribute('data-quick-hidden','');
+   api.form.finishSelect.value='lacquer_acrylic';
+  }
+  if(standard)api.form.layoutBField.setAttribute('data-quick-hidden','');
   api.form.finishSelect.dispatchEvent(new Event('change',{bubbles:true}));api.recalculate();render(api.result());
  }
  // Configure the view before detailed-panels.js starts; the DOM event runs after it has been loaded.

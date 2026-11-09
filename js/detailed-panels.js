@@ -311,7 +311,7 @@
   const MULTI_LAYOUT_IDS = new Set(["straight", "diagonal45", "herringbone", "custom"]);
 
   function allowedLayoutsForType(type = selectedMaterialType()) {
-    const layouts = (data?.layouts || []).filter(item => !window.WoodstockPanelsView?.allowLayout || window.WoodstockPanelsView.allowLayout(item));
+    const layouts = (data?.layouts || []).filter(item => !window.WoodstockPanelsView?.allowLayout || window.WoodstockPanelsView.allowLayout(item, type));
     return type === "multi" ? layouts.filter((item) => MULTI_LAYOUT_IDS.has(item.id)) : layouts;
   }
 
@@ -949,7 +949,8 @@
     }
     return [...new Set(veneerVariants(item)
       .map(itemThickness)
-      .filter((value) => Number.isFinite(value) && value > 0 && value <= MAX_FACE_VENEER_THICKNESS_MM))]
+      .filter((value) => Number.isFinite(value) && value > 0 && value <= MAX_FACE_VENEER_THICKNESS_MM
+        && (!window.WoodstockPanelsView?.faceThicknesses || window.WoodstockPanelsView.faceThicknesses.includes(value))))]
       .sort((a, b) => a - b);
   }
 
@@ -1367,6 +1368,7 @@
     }
 
     candidates.forEach((item) => {
+      if (which === "A" && window.WoodstockPanelsView?.faceThicknesses && !window.WoodstockPanelsView.faceThicknesses.includes(itemThickness(item))) return;
       if (which === "B") {
         const t = itemThickness(item);
         if (!sameConfirmedThickness(t, aThickness)) return;
@@ -8012,6 +8014,33 @@
   }
 
   function recalc() {
+    const view = window.WoodstockPanelsView;
+    if (view?.fixedWallConfiguration) {
+      positionFinishOverridesEnabled = false;
+      positionEdgeOverridesEnabled = false;
+      form.baseSelect.value = "mdf";
+      form.baseThicknessSelect.replaceChildren(new Option("12 мм", "12"));
+      form.baseThicknessSelect.value = "12";
+      form.veneeredSidesSelect.value = "1";
+      form.reverseSideSelect.value = "rough";
+      form.edgeModeSelect.value = "attached";
+      form.edgeThicknessSelect.value = "0.6";
+      form.edgeSidesSelect.value = "perimeter";
+      if (form.finishSelect.value !== "lacquer_acrylic") {
+        form.finishSelect.value = "lacquer_acrylic";
+        updateFinishUI();
+        return;
+      }
+      form.lacquerProcessSelect.value = "primer_lacquer";
+      if (selectedVeneerAGroup) updateVeneerThicknessOptions({ preserve: true });
+    }
+    if (view?.sameBackLayout) {
+      form.layoutBSelect.value = "";
+      form.layoutBField.setAttribute("data-quick-hidden", "");
+      const fixed = ["design", "multi"].includes(selectedMaterialType());
+      form.layoutSelect.closest(".field").toggleAttribute("data-quick-hidden", fixed);
+      if (fixed) form.layoutSelect.value = "straight";
+    }
     if (isQuickWallPanel() || isQuickDetailsPanel()) form.toningSelect.value = "no";
     syncQuickWallBack();
     syncQuickPaperBack();
