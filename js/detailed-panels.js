@@ -3284,18 +3284,12 @@
         thickness <= num(limit.maxThicknessMm)) || null;
     }
     if (!size || manufacturingTypeForSize(size) !== "exact") return null;
-    if (classifySize(size).id !== "nonstandard") return null;
-    if (form.edgeModeSelect.value !== "attached") return null;
-
-    const finish = effectiveFinishForSize(size);
-    if (!isLacquerFinish(finish?.finishId)) return null;
-
     const thickness = parseThicknessComposition(currentBaseThicknessRaw()).total;
     if (!Number.isFinite(thickness)) return null;
 
     const limits = Array.isArray(data?.meta?.finishedDetailLimits) ? data.meta.finishedDetailLimits : [];
     return limits.find((limit) => (
-      thickness >= num(limit?.minThicknessMm) &&
+      thickness >= (num(limit?.minThicknessMm) === 20 ? 22 : num(limit?.minThicknessMm)) &&
       thickness <= num(limit?.maxThicknessMm)
     )) || null;
   }
@@ -4663,7 +4657,7 @@
                   const limit = technologicalSizeInvalidRows[0].technologicalSizeLimit;
                   return isDetailedPanelCalculation()
                     ? `Для выбранного типа изготовления при этой толщине ${technologicalLimitDescription(limit)}.`
-                    : `Для нестандартной готовой детали со шлифовкой, лаком и кромкой при этой толщине максимум ${limit?.maxLengthMm || "—"} × ${limit?.maxWidthMm || "—"} мм.`;
+                    : `Для готовой детали в точный размер при этой толщине максимум ${limit?.maxLengthMm || "—"} × ${limit?.maxWidthMm || "—"} мм.`;
                 })()
               : ""
     };
@@ -4674,7 +4668,7 @@
     if (transitionDescriptionInvalidRows.length) warnings.push("Добавьте описание перехода рисунка или приложите файл.");
     technologicalSizeInvalidRows.forEach((size) => {
       const limit = size.technologicalSizeLimit;
-      warnings.push(`Позиция ${size.position}: ${isDetailedPanelCalculation() ? (manufacturingTypeForSize(size) === "exact" ? "чистовая деталь" : "полуфабрикат") : "нестандартная готовая деталь со шлифовкой, лаком и кромкой"} при толщине ${String(parseThicknessComposition(currentBaseThicknessRaw()).total).replace(".", ",")} мм — ${technologicalLimitDescription(limit)}.`);
+      warnings.push(`Позиция ${size.position}: ${isDetailedPanelCalculation() ? (manufacturingTypeForSize(size) === "exact" ? "чистовая деталь" : "полуфабрикат") : "готовая деталь в точный размер"} при толщине ${String(parseThicknessComposition(currentBaseThicknessRaw()).total).replace(".", ",")} мм — ${technologicalLimitDescription(limit)}.`);
     });
     const validSizes = sizes.filter((x) => x.sizeValid && x.length > 0 && x.width > 0 && x.quantityValid);
     if (isDetailedPanelCalculation() && validSizes.length) {
