@@ -100,7 +100,7 @@
    row('quickFixedBaseThickness','Толщина основы',text(form.baseThicknessSelect));
    row('quickVeneeredSides','Фанеровка',text(form.veneeredSidesSelect));
    row('quickReverseSide','Обратная сторона',text(form.reverseSideSelect));
-   row('quickFixedEdgeThickness','Толщина кромки',text(form.edgeThicknessSelect));
+   row('quickFixedEdgeThickness','Толщина кромки',form.edgeThicknessSelect.value?text(form.edgeThicknessSelect)+' мм':'—');
    row('quickFixedEdgeSides','Стороны облицовки',text(form.edgeSidesSelect));
    row('quickFixedFinish','Финишное покрытие',text(form.finishSelect));
   }else{
@@ -123,6 +123,9 @@
   const attached=result?.edge?.mode==='attached';
   row('quickFixedEdgeMode','Кромка',text(form.edgeModeSelect),!standard&&attached);
   row('quickFixedEdgeType','Тип кромки',text(form.edgeTypeSelect),!standard&&attached);
+  const metersSummary=$('attachedEdgeMetersSummary');
+  metersSummary?.closest('.field')?.toggleAttribute('data-summary-fixed',!standard&&attached);
+  row('quickFixedEdgeMeters','Метраж кромки',metersSummary?.textContent?.trim()||'—',!standard&&attached);
   const fixedWidth=attached&&(wall||form.edgeWidthSelect.disabled||form.edgeOrderWidthInput.readOnly);
   field(form.edgeWidthSelect,fixedWidth);field(form.edgeOrderWidthInput,fixedWidth);
   row('quickEdgeWidth','Ширина кромки',Number.isFinite(result?.edge?.widthMm)?number(result.edge.widthMm)+' мм':'—',wall||fixedWidth||standard&&result?.edge?.mode==='separate');
