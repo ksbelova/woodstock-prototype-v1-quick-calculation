@@ -1062,6 +1062,57 @@
     return String(item?.thicknessSource || item?.source || "").trim();
   }
 
+  function explicitVeneerPositionRequired(group) {
+    return isDetailedPanelCalculation() && Boolean(group) && !isReadyShirt(group);
+  }
+
+  function veneerPricePositionName(item) {
+    return String(item?.sourceRawName || item?.name || "").trim();
+  }
+
+  function syncVeneerPricePosition(which, preserve = true) {
+    const group = which === "A" ? selectedVeneerAGroup : selectedVeneerBGroup;
+    const select = el(`veneer${which}PricePositionSelect`);
+    if (!select) return;
+    const active = explicitVeneerPositionRequired(group);
+    const previous = preserve ? select.value : "";
+    const cut = (which === "A" ? form.veneerCutSelect : form.veneerBCutSelect).value;
+    const variants = active ? veneerVariantsAtThickness(group).filter(item =>
+      !["radial", "tangential"].includes(cut) || confirmedPatternTypesForItem(item).includes(cut)
+    ) : [];
+    select.closest(".field").classList.toggle("is-hidden", !active);
+    select.required = active;
+    select.replaceChildren(new Option("Выберите позицию прайса (сорт)", ""));
+    variants.forEach(item => select.add(new Option(
+      `${veneerPricePositionName(item)} — ${Number.isFinite(num(item.prices?.retail)) ? money(num(item.prices.retail)) + "/м²" : "цена по запросу"}`, item.id
+    )));
+    select.value = variants.some(item => item.id === previous) ? previous : "";
+    const selected = variants.find(item => item.id === select.value) || null;
+    if (active) {
+      if (which === "A") selectedVeneerA = selected;
+      else selectedVeneerB = selected;
+    }
+    if (select.value) {
+      select.closest(".field").classList.remove("field--invalid");
+      select.setAttribute("aria-invalid", "false");
+      el(`veneer${which}PricePositionError`).textContent = "";
+    }
+  }
+
+  function onVeneerPricePositionChanged(which) {
+    syncVeneerPricePosition(which);
+    clearPriceOverrides(`veneer:${which}:`);
+    veneerConditionChoices[which] = "";
+    if (which === "A") {
+      veneerAPriceAuto = true;
+      updateVeneerBModeLabel();
+      applyVeneerThicknessRules();
+      syncEdgeVeneerDefaults();
+    } else veneerBPriceAuto = true;
+    renderStandardSizes();
+    recalc();
+  }
+
   function bestVeneerVariant(items) {
     return [...items].sort((a, b) => {
       const priceDiff = (num(b?.prices?.retail) || 0) - (num(a?.prices?.retail) || 0);
@@ -1123,7 +1174,7 @@
 
   function patternChoiceRequired(variants, cuts) {
     if (cuts.length < 2) return false;
-    if (!window.WoodstockPanelsView?.priceSensitivePatterns) return true;
+    if (isDetailedPanelCalculation() || !window.WoodstockPanelsView?.priceSensitivePatterns) return true;
     const prices = cuts.map(cut => num(bestVeneerVariantForCut(variants, cut)?.prices?.retail));
     return new Set(prices).size > 1;
   }
@@ -1145,6 +1196,7 @@
       form.veneerCutSelect.add(new Option(veneerCutLabel("mixed"), "mixed"));
       form.veneerCutSelect.value = "mixed";
       selectedVeneerA = bestVeneerVariant(variants);
+      syncVeneerPricePosition("A", preserve);
       return;
     }
 
@@ -1153,6 +1205,7 @@
       const onlyCut = cuts.length === 1 ? cuts[0] : "";
       form.veneerCutSelect.value = onlyCut;
       selectedVeneerA = onlyCut ? bestVeneerVariantForCut(variants, onlyCut) : bestVeneerVariant(variants);
+      syncVeneerPricePosition("A", preserve);
       return;
     }
 
@@ -1160,11 +1213,13 @@
     const next = cuts.includes(previous) ? previous : "";
     form.veneerCutSelect.value = next;
     selectedVeneerA = next ? bestVeneerVariantForCut(variants, next) : bestVeneerVariant(variants);
+    syncVeneerPricePosition("A", preserve);
   }
 
   function onVeneerCutChanged() {
     const variants = veneerVariantsAtThickness(selectedVeneerAGroup);
     selectedVeneerA = bestVeneerVariantForCut(variants, form.veneerCutSelect.value);
+    syncVeneerPricePosition("A");
     clearPatternTypeError("A");
     updateVeneerBModeLabel();
     syncEdgeVeneerDefaults();
@@ -1269,6 +1324,7 @@
       form.veneerBCutField.classList.add("is-hidden");
       form.veneerBCutSelect.value = "";
       selectedVeneerB = null;
+      syncVeneerPricePosition("B", preserve);
       return;
     }
 
@@ -1277,6 +1333,7 @@
       form.veneerBCutSelect.add(new Option(veneerCutLabel("mixed"), "mixed"));
       form.veneerBCutSelect.value = "mixed";
       selectedVeneerB = bestVeneerVariant(variants);
+      syncVeneerPricePosition("B", preserve);
       return;
     }
 
@@ -1285,6 +1342,7 @@
       const onlyCut = cuts.length === 1 ? cuts[0] : "";
       form.veneerBCutSelect.value = onlyCut;
       selectedVeneerB = onlyCut ? bestVeneerVariantForCut(variants, onlyCut) : bestVeneerVariant(variants);
+      syncVeneerPricePosition("B", preserve);
       return;
     }
 
@@ -1292,11 +1350,13 @@
     const next = cuts.includes(previous) ? previous : "";
     form.veneerBCutSelect.value = next;
     selectedVeneerB = next ? bestVeneerVariantForCut(variants, next) : bestVeneerVariant(variants);
+    syncVeneerPricePosition("B", preserve);
   }
 
   function onVeneerBCutChanged() {
     const variants = veneerVariantsAtThickness(selectedVeneerBGroup, selectedVeneerThickness());
     selectedVeneerB = bestVeneerVariantForCut(variants, form.veneerBCutSelect.value);
+    syncVeneerPricePosition("B");
     clearPatternTypeError("B");
     veneerBPriceAuto = true;
     veneerConditionChoices.B = "";
@@ -1335,7 +1395,7 @@
   function updateVeneerBModeLabel() {
     const sameOption = form.veneerBModeSelect?.querySelector('option[value="same"]');
     if (!sameOption) return;
-    sameOption.textContent = backsideCategoryBRequired(selectedVeneerA || selectedVeneerAGroup)
+    sameOption.textContent = backsideCategoryBRequired(isDetailedPanelCalculation() ? selectedVeneerA : (selectedVeneerA || selectedVeneerAGroup))
       ? "Та же порода, категория B"
       : "Такой же, как лицевая сторона";
   }
@@ -3702,7 +3762,13 @@
     if (sides === 1 && form.reverseSideSelect.value !== "rough") return [];
     if (sides === 2 && form.veneerBModeSelect.value !== "same") return [];
     if (layoutNeedsTz(layout)) return [];
-    const sourceNames = new Set(veneerVariants(selectedVeneerA).map((x) => String(x.name || "").toLocaleLowerCase("ru")));
+    const sourceNames = new Set((isDetailedPanelCalculation() ? [selectedVeneerA] : veneerVariants(selectedVeneerA))
+      .map(x => String(x.name || "").toLocaleLowerCase("ru")));
+    if (isDetailedPanelCalculation() && veneerDisplayName(selectedVeneerA) === "Дуб") {
+      const name = veneerPricePositionName(selectedVeneerA).replace(/А/g, "A").replace(/В/g, "B");
+      if (/\bExtra\b/i.test(name)) sourceNames.add("дуб extra");
+      else if (/\b(?:Panel\s+)?A$/.test(name)) sourceNames.add("дуб a");
+    }
     const warehouseFormats = data?.warehouseFormatsByThickness?.[String(t.total)];
     const allowedWarehouse = (row) => !Array.isArray(warehouseFormats) || warehouseFormats.some((fmt) => (
       sameSizePair(row.lengthMm, row.widthMm, fmt.length, fmt.width)
@@ -4421,6 +4487,7 @@
   // not by the price of the individual sheet format.
   function multiVeneerVariantByConsumption(selected, group, sizeRows, sideLayouts) {
     if (!isDetailedPanelCalculation() || selected?.type !== "multi" || !group || !sizeRows.length) return selected;
+    if (explicitVeneerPositionRequired(group)) return selected;
     const candidates = veneerVariantsAtThickness(group, itemThickness(selected));
     if (candidates.length < 2) return selected;
     const rows = sizeRows.map(size => ({ size, classificationId: classifySize(size).id }))
@@ -5107,7 +5174,7 @@
     const veneerConsumptions = [];
     const materialIdentity = (item) => String(item?.id || veneerDisplayName(item) || "unknown");
     const sameMaterial = (left, right) => Boolean(left && right && (
-      (left.id && right.id && left.id === right.id) || veneerDisplayName(left) === veneerDisplayName(right)
+      (left.id && right.id && left.id === right.id) || (!isDetailedPanelCalculation() && veneerDisplayName(left) === veneerDisplayName(right))
     ));
     const consumptionKeyFor = (item, which, sameAsA, pricingMode) =>
       `${pricingMode}:${materialIdentity(item)}:${sameAsA ? "A+B" : which}`;
@@ -6466,7 +6533,7 @@
       sides === 1 ||
       form.veneerBModeSelect.value === "same" ||
       (roughSideRequested && roughSideCompatible) ||
-      Boolean(selectedVeneerB || (selectedVeneerBGroup && selectedVeneerBGroup.type !== "natural"))
+      Boolean(selectedVeneerB || (!isDetailedPanelCalculation() && selectedVeneerBGroup && selectedVeneerBGroup.type !== "natural"))
     ) && sideThicknessCompatible && roughSideCompatible;
     const unconfirmedFitItems = itemResults.filter(item => item.productionFitUnconfirmed);
     if (unconfirmedFitItems.length) {
@@ -6885,6 +6952,7 @@
 
     if (isDetailedPanelCalculation()) {
       characteristics.push(specRow("Лицевая сторона", isReadyShirt(veneerA) ? (veneerA?.displayName || "—") : veneerDisplayName(veneerA)));
+      if (explicitVeneerPositionRequired(veneerA) && selectedVeneerA) characteristics.push(specRow("Позиция прайса (сорт)", veneerPricePositionName(veneerA), 1));
       if (veneerA?.typeName) characteristics.push(specRow("Тип шпона", veneerA.typeName, 1));
       if (Number.isFinite(veneerThickness)) characteristics.push(specRow("Толщина", specMm(veneerThickness), 1));
       if (cutA && !isReadyShirt(veneerA)) characteristics.push(specRow("Тип рисунка", cutA, 1));
@@ -6897,6 +6965,7 @@
         : sideBSelectedMaterial ? (isReadyShirt(sideBSelectedMaterial) ? (sideBSelectedMaterial.displayName || "—") : veneerDisplayName(sideBSelectedMaterial)) : sideBMode;
       characteristics.push(specRow("Обратная сторона", backName));
       if (sides === 2) {
+        if (explicitVeneerPositionRequired(sideBSelectedMaterial)) characteristics.push(specRow("Позиция прайса (сорт)", veneerPricePositionName(sideBSelectedMaterial), 1));
         if (!isReadyShirt(sideBSelectedMaterial) && sideBSelectedMaterial?.typeName) characteristics.push(specRow("Тип шпона", sideBSelectedMaterial.typeName, 1));
         if (Number.isFinite(sideBThickness)) characteristics.push(specRow("Толщина", specMm(sideBThickness), 1));
         if (sideBPatternName && !isReadyShirt(sideBSelectedMaterial) && sideBSelectionMode !== "rough") characteristics.push(specRow("Тип рисунка", sideBPatternName, 1));
@@ -7545,6 +7614,16 @@
         }
       }
     }
+
+    ["A", "B"].forEach(which => {
+      const group = which === "A" ? selectedVeneerAGroup : selectedVeneerBGroup;
+      const active = which === "A" || (Number(form.veneeredSidesSelect.value) === 2 && form.veneerBModeSelect.value === "other");
+      const selected = which === "A" ? selectedVeneerA : selectedVeneerB;
+      if (active && explicitVeneerPositionRequired(group) && !selected) {
+        add(`veneer${which}PricePosition`, `позицию прайса ${which === "A" ? "лицевой" : "обратной"} стороны`,
+          el(`veneer${which}PricePositionSelect`), "Выберите позицию прайса (сорт).", el(`veneer${which}PricePositionError`));
+      }
+    });
 
     const sides = Number(form.veneeredSidesSelect.value);
     const veneerThickness = selectedVeneerThickness();
@@ -8847,7 +8926,7 @@
       typeName: item.typeName || (isReadyShirt(item) ? "Готовая рубашка" : ""),
       id: item.id || "",
       article: item.article || "",
-      name: item.displayName || item.name || veneerDisplayName(item),
+      name: explicitVeneerPositionRequired(item) ? veneerPricePositionName(item) : (item.displayName || item.name || veneerDisplayName(item)),
       thicknessMm: Number.isFinite(thicknessMm) ? thicknessMm : null,
       thicknessSource: thicknessSourceForItem(item) || null,
       totalVeneeredSides,
@@ -9069,7 +9148,7 @@
       veneerConsumptions: (lastCalculation.veneerConsumptions || []).map(veneerConsumptionSaveRecord),
       readyShirts: readyShirtsForSave,
       veneerType: readyShirtSelected ? "" : ((selectedVeneerA || selectedVeneerAGroup)?.typeName || ""),
-      veneerA: readyShirtSelected ? "" : veneerDisplayName(selectedVeneerA || selectedVeneerAGroup),
+      veneerA: readyShirtSelected ? "" : (isDetailedPanelCalculation() ? veneerPricePositionName(selectedVeneerA) : veneerDisplayName(selectedVeneerA || selectedVeneerAGroup)),
       veneerThickness: readyShirtSelected ? null : selectedVeneerThickness(),
       veneerAPriceLevel: readyShirtSelected ? "" : (lastCalculation.veneerPricings.find((x) => x.which === "A")?.levelName || ""),
       sides, sideB: sides === 1 ? (form.reverseSideSelect.options[form.reverseSideSelect.selectedIndex]?.text || "") : (sideBSelectionModeForSave === "same" ? (backsideCategoryBRequired(selectedVeneerA) ? "Категория B той же породы (автоматически)" : veneerDisplayName(selectedVeneerA || selectedVeneerAGroup)) : sideBSelectionModeForSave === "rough" ? "Черновой шпон" : veneerDisplayName(selectedVeneerB || selectedVeneerBGroup)), veneerBPriceLevel: lastCalculation.veneerPricings.find((x) => x.which === "B")?.levelName || "",
@@ -9394,6 +9473,10 @@
       recalc();
     });
     form.veneerThicknessSelect.addEventListener("change", onVeneerThicknessChanged);
+    form.root.addEventListener("change", event => {
+      const side = event.target.id.match(/^veneer([AB])PricePositionSelect$/)?.[1];
+      if (side) onVeneerPricePositionChanged(side);
+    });
     form.veneeredSidesSelect.addEventListener("change", () => { markFieldTouched("veneeredSides"); clearTouchedFields("veneerB", "veneerBMode", "veneerBRoughThickness", "layout", "layoutTz"); updateSidesUI(); });
     form.reverseSideSelect.addEventListener("change", () => { renderStandardSizes(); recalc(); });
     form.veneerBModeSelect.addEventListener("change", () => { markFieldTouched("veneerBMode"); clearTouchedFields("veneerB", "veneerBRoughThickness", "layout", "layoutTz"); updateSidesUI(); });
@@ -9785,6 +9868,16 @@
     if (isDetailedPanelCalculation()) {
       const savedForm = document.createElement("div");
       savedForm.innerHTML = state.form.html;
+      ["A", "B"].forEach(which => {
+        if (!savedForm.querySelector(`#veneer${which}PricePositionField`)) {
+          const field = el(`veneer${which}PricePositionField`).cloneNode(true);
+          field.querySelector("select").replaceChildren(new Option("Выберите позицию прайса (сорт)", ""));
+          const anchor = savedForm.querySelector(which === "A" ? "#veneerThicknessField" : "#veneerBSearchField");
+          anchor.after(field);
+          state = { ...state, [`selectedVeneer${which}`]: isReadyShirt(state[`selectedVeneer${which}Group`]) ? state[`selectedVeneer${which}`] : null };
+        }
+      });
+      state = { ...state, form: { ...state.form, html: savedForm.innerHTML } };
       if (!savedForm.querySelector("#backVeneerLayoutGrid")) {
         const backGrid = document.createElement("div");
         backGrid.id = "backVeneerLayoutGrid";
@@ -9815,6 +9908,8 @@
       input.addEventListener('change',()=>{updateSizeTransitionUI(row);recalc();});
     });
     arrangeDetailedSideFields();
+    syncVeneerPricePosition("A");
+    syncVeneerPricePosition("B");
     Array.from(form.finishSidesSelect.options).forEach(option => { option.textContent = finishSidesLabel(option.value); });
     ["attached", "separate"].forEach(which => syncEdgeThicknessOptions(which, { preserve: true }));
     if (isQuickManufacturedPanel()) {
@@ -9917,6 +10012,8 @@
     }
     const layout=data.layouts.find(item=>item.id===(record.layoutId||record.layoutAId)||item.name===record.layout);
     set(form.layoutSelect,layout?.id);set(form.layoutBSelect,record.layoutBId);
+    set(el("veneerAPricePositionSelect"),record.materialSides?.A?.id);
+    set(el("veneerBPricePositionSelect"),record.materialSides?.B?.id);
     set(form.layoutTzComment,record.layoutTzComment||'','input');files(form.layoutTzFiles,record.layoutTzFiles);
     set(form.sandingSelect,record.sanding?'yes':'no');
     if(record.calibration?.enabled){set(form.calibrationSelect,'yes');set(form.calibrationTargetInput,record.calibration.baseThicknessAfterCalibrationMm,'input');}

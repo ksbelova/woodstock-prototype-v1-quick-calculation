@@ -89,6 +89,12 @@
               <span class="field__error" id="veneerThicknessError"></span>
             </label>
 
+            <label class="field is-hidden" id="veneerAPricePositionField">
+              <span class="field__label">Позиция прайса (сорт)</span>
+              <select id="veneerAPricePositionSelect" aria-describedby="veneerAPricePositionError"><option value="">Выберите позицию прайса (сорт)</option></select>
+              <span class="field__error" id="veneerAPricePositionError"></span>
+            </label>
+
             <label class="field is-hidden" id="veneeredSidesField">
               <span class="field__label">Фанеровка</span>
               <select id="veneeredSidesSelect">
@@ -128,6 +134,11 @@
               </div>
               <span class="field__error" id="veneerBError"></span>
             </div>
+            <label class="field is-hidden" id="veneerBPricePositionField">
+              <span class="field__label">Позиция прайса (сорт)</span>
+              <select id="veneerBPricePositionSelect" aria-describedby="veneerBPricePositionError"><option value="">Выберите позицию прайса (сорт)</option></select>
+              <span class="field__error" id="veneerBPricePositionError"></span>
+            </label>
             <label class="field is-hidden" id="veneerBRoughThicknessField">
               <span class="field__label">Толщина чернового шпона обратной стороны</span>
               <select id="veneerBRoughThicknessSelect"><option value="">Выберите толщину</option></select>
@@ -514,6 +525,6 @@
   <script src="../../js/core/panels-core.js?v=20261028-edge-threshold"></script>
   <script src="../../js/core/specification-state.js"></script>
   <script src="../../js/specification-bridge.js"></script>
-  <script src="../../js/detailed-panels.js?v=20261109-audit-fixes"></script>
+  <script src="../../js/detailed-panels.js?v=20261112-price-position"></script>
 </body>
 </html>
