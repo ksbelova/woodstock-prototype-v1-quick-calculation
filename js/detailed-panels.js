@@ -1681,7 +1681,7 @@
 
   function edgeTypeIdForThickness(preferred, thickness, which) {
     const glue = ["sk_s", "thick_glue_1"].includes(preferred) &&
-      !(isQuickManufacturedPanel() && which === "attached");
+      !((isDetailedPanelCalculation() || isQuickManufacturedPanel()) && which === "attached");
     if (!Number.isFinite(thickness)) return preferred;
     if (thickness === 0.6) return glue ? "sk_s" : "vl_s";
     if (thickness === 1) return glue ? "thick_glue_1" : "thick";
@@ -1702,9 +1702,10 @@
     const labels = { thick: "Без клея", vl_s: "Без клея на флисе (VL/S)",
       sk_s: "С клеем (SK/S)", thick_glue_1: "С клеем (SK/S)" };
     controls.typeSelect.replaceChildren(new Option("Выберите тип кромки", ""));
-    ids.forEach(id => controls.typeSelect.add(new Option(labels[id], id)));
+    const allowedIds = ids.filter(id => !(isDetailedPanelCalculation() && which === "attached" && edgeTypeById(id)?.hasGlue));
+    allowedIds.forEach(id => controls.typeSelect.add(new Option(labels[id], id)));
     const selected = edgeTypeIdForThickness(previous, thickness, which);
-    controls.typeSelect.value = ids.includes(selected) ? selected : "";
+    controls.typeSelect.value = allowedIds.includes(selected) ? selected : "";
     if (previous !== controls.typeSelect.value) {
       clearEdgeCatalogBinding(which);
       syncEdgeDefaultForKind(which);
