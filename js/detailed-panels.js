@@ -4294,6 +4294,8 @@
     return Number.isFinite(rate) && rate > 0 ? rate : null;
   }
 
+  const BASE_WORK_RETAIL_FALLBACK_WARNING = "Скидка по условию клиента для основы и работы не применена. При необходимости укажите ручную скидку";
+
   function priceListRateConditionState({ row, defaultRate, conditionId, adjustmentId, componentLabel }) {
     const rate = num(defaultRate);
     const requestedCondition = conditionId || "retail";
@@ -4322,6 +4324,12 @@
       }
     }
 
+    // Missing client terms must not remove a known retail base/work rate.
+    // Keep the requested condition for the other components; infer no discount.
+    const retailFallback = isDetailedPanelCalculation() && requestedCondition !== "retail" &&
+      !selected && !invalidDiscount && Number.isFinite(retailRate);
+    const conditionFound = requestedCondition === "retail" ? true : Boolean(selected);
+    if (retailFallback) selected = { id: "retail", sourceMode: "retail_fallback", price: retailRate };
     const conditionUnresolved = requestedCondition !== "retail" && !selected;
     const finalRate = Number.isFinite(num(selected?.price)) ? num(selected.price) : null;
     const actualConditionId = selected?.id || requestedCondition;
@@ -4333,10 +4341,11 @@
       componentLabel, adjustmentId, conditionId: actualConditionId,
       requestedConditionId: requestedCondition,
       conditionPriceKey: clientConditionPriceKey(actualConditionId),
-      conditionName: requestedCondition === "retail" ? "Розничная цена" : clientConditionUiName(requestedCondition),
+      conditionName: actualConditionId === "retail" ? "Розничная цена" : clientConditionUiName(actualConditionId),
       source: requestedCondition === "retail" ? null : "price_list",
       sourceMode: selected?.sourceMode || null,
-      conditionFound: requestedCondition === "retail" ? true : Boolean(selected),
+      conditionFound,
+      retailFallback,
       conditionUnresolved,
       invalidDiscount,
       retailRatePerM2: Number.isFinite(retailRate) ? retailRate : null,
@@ -4820,6 +4829,7 @@
             adjustmentId: `base-rate:standard-request:${base?.id || "none"}:${normalizeThicknessKey(thickness.raw)}:${sides}:${rateRow?.veneerThicknessClass || "none"}:${condition}:discount`,
             componentLabel: `${base?.name || "Основа"} + работа · стандарт по запросу`
           });
+          if (basePricing.retailFallback) warnings.push(BASE_WORK_RETAIL_FALLBACK_WARNING);
           baseRatePricings.push({
             ...basePricing, pricingMode: "standard_request", position: size.position, areaM2: area,
             automaticCost: Number.isFinite(basePricing.automaticRatePerM2) ? area * basePricing.automaticRatePerM2 : null,
@@ -4845,7 +4855,7 @@
             breakdown.push({
               label: `Стандарт по запросу · ${size.length}×${size.width}`,
               value: baseWork,
-              note: `${money(appliedRate)}/м²${basePricing.conditionFound && condition !== "retail" ? ` · ${basePricing.conditionName} по прайсу` : ""} · шпон ${Number.isFinite(veneerThickness) && veneerThickness >= 1.5 ? "от 1,5 мм" : "0,6 мм"}.`
+              note: `${money(appliedRate)}/м²${basePricing.retailFallback ? " · розничная ставка" : ""}${basePricing.conditionFound && condition !== "retail" ? ` · ${basePricing.conditionName} по прайсу` : ""} · шпон ${Number.isFinite(veneerThickness) && veneerThickness >= 1.5 ? "от 1,5 мм" : "0,6 мм"}.`
             });
           }
         } else if (usesReadyShirt) {
@@ -5010,6 +5020,7 @@
               adjustmentId: `base-rate:nonstandard:${base.id}:${normalizeThicknessKey(thickness.raw)}:${sides}:${condition}:discount`,
               componentLabel: `${base.name} + работа · точный размер`
             });
+            if (basePricing.retailFallback) warnings.push(BASE_WORK_RETAIL_FALLBACK_WARNING);
             baseRatePricings.push({
               ...basePricing, pricingMode: "nonstandard", position: size.position, areaM2: area,
               automaticCost: Number.isFinite(basePricing.automaticRatePerM2) ? area * basePricing.automaticRatePerM2 : null,
@@ -5025,7 +5036,7 @@
                 : `Точный размер: для компонента «${basePricing.componentLabel}» нет подтверждённой цены условия «${basePricing.conditionName}»; розничная ставка автоматически не подставляется.`);
               breakdown.push({ label: `${base.name} + работа, ${size.length}×${size.width}`, value: 0, note: `Цена условия «${basePricing.conditionName}» для компонента не подтверждена — компонент не включён в итог.` });
             } else {
-              breakdown.push({ label: `${base.name} + работа, ${size.length}×${size.width}`, value: baseWork, note: `${rateRow.sourceNote || "Готовая ставка из актуальной таблицы деталировки"}: ${money(appliedRate)}/м².${basePricing.conditionFound && condition !== "retail" ? ` ${basePricing.conditionName} применено по прайсовым данным.` : ""} Коэффициент 1,53 повторно не применяется.` });
+              breakdown.push({ label: `${base.name} + работа, ${size.length}×${size.width}`, value: baseWork, note: `${rateRow.sourceNote || "Готовая ставка из актуальной таблицы деталировки"}: ${money(appliedRate)}/м².${basePricing.retailFallback ? " Применена розничная ставка." : ""}${basePricing.conditionFound && condition !== "retail" ? ` ${basePricing.conditionName} применено по прайсовым данным.` : ""} Коэффициент 1,53 повторно не применяется.` });
             }
             const faceThickness = selectedVeneerThickness();
             if (!basePricing.conditionUnresolved && thickVeneerWorkAdjustment.applies && Number.isFinite(thickVeneerWorkAdjustment.actualCoefficient)) {
@@ -8192,7 +8203,7 @@
     if (condition !== "retail") {
       const calculatedBaseRows = lastCalculation.baseRatePricings || [];
       if (calculatedBaseRows.some((pricing) => !pricing.conditionFound)) {
-        conditionNotes.push("Для части основы/работ в текущих прайсовых данных нет отдельной цены или скидки по выбранному условию; такие компоненты оставлены без автоматически придуманной скидки.");
+        conditionNotes.push(calculatedBaseRows.some(pricing => pricing.retailFallback) ? BASE_WORK_RETAIL_FALLBACK_WARNING : "Для части основы/работ в текущих прайсовых данных нет отдельной цены или скидки по выбранному условию; такие компоненты оставлены без автоматически придуманной скидки.");
       }
       if (lastCalculation.requiresProductionCost) {
         conditionNotes.push("Общая стоимость производства не изменяется по условию клиента внутри подробного расчёта; она обрабатывается отдельно на общей странице.");
@@ -8767,6 +8778,8 @@
       conditionName: pricing.conditionName || clientConditionById(pricing.conditionId || "retail")?.name || "Розничная цена",
       conditionSource: pricing.conditionFound ? "price_list" : null,
       priceListConditionFound: Boolean(pricing.conditionFound),
+      retailFallback: Boolean(pricing.retailFallback),
+      requestedConditionId: pricing.requestedConditionId || pricing.conditionId || "retail",
       sourceMode: pricing.sourceMode || null,
       retailRatePerM2: Number.isFinite(pricing.retailRatePerM2) ? pricing.retailRatePerM2 : null,
       automaticRatePerM2: Number.isFinite(pricing.automaticRatePerM2) ? pricing.automaticRatePerM2 : null,
