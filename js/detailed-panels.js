@@ -4100,7 +4100,14 @@
 
   function syncEdgeModeFields() {
     const mode = form.edgeModeSelect.value;
-    const showWallEdgeFields = isQuickWallPanel() && selectedBase()?.id !== "gsp";
+    const thickness = physicalBaseThicknessMm();
+    const minThickness = num(data?.meta?.edgeMinBaseThicknessMm);
+    const maxThickness = num(data?.meta?.edgeMaxBaseThicknessMm);
+    const detailsEdgeUnavailable = isQuickDetailsPanel() && Number.isFinite(thickness) &&
+      ((Number.isFinite(minThickness) && thickness < minThickness) ||
+       (Number.isFinite(maxThickness) && thickness > maxThickness));
+    if (isQuickDetailsPanel()) form.edgeModeSelect.closest('.form-block').classList.toggle('is-hidden', detailsEdgeUnavailable);
+    const showWallEdgeFields = isQuickManufacturedPanel() && selectedBase()?.id !== "gsp" && !detailsEdgeUnavailable;
     form.attachedEdgeFields.classList.toggle("is-hidden", mode !== "attached" && !showWallEdgeFields);
     form.separateEdgeFields.classList.toggle("is-hidden", mode !== "separate");
     form.edgeCommentField.classList.toggle("is-hidden", mode === "none" && !showWallEdgeFields);
