@@ -215,7 +215,7 @@ body[data-panel-scenario="standard"] [data-size-extra] {display:none!important}
               <label class="field is-hidden" id="edgeOrderWidthField">
                 <span class="field__label">Ширина, мм</span>
                 <input id="edgeOrderWidthInput" type="number" min="1" step="1" inputmode="decimal" />
-                <span class="field__note">Предложена ширина по толщине детали; можно изменить. Цена заказной кромки требует согласования.</span>
+                <span class="field__note">Укажите ширину кромки в рулоне.</span>
               </label>
             </div>
 
@@ -285,10 +285,10 @@ body[data-panel-scenario="standard"] [data-size-extra] {display:none!important}
                   <option value="">Выберите позицию кромки</option>
                 </select>
               </label>
-              <label class="field is-hidden" id="separateEdgeOrderWidthField" data-quick-hidden>
+              <label class="field is-hidden" id="separateEdgeOrderWidthField">
                 <span class="field__label">Ширина, мм</span>
-                <input id="separateEdgeOrderWidthInput" type="number" min="1" step="1" inputmode="decimal" />
-                <span class="field__note">Предложена ширина по толщине детали; можно изменить. Цена заказной кромки требует согласования.</span>
+                <input id="separateEdgeOrderWidthInput" type="number" min="19" step="1" inputmode="numeric" />
+                <span class="field__note">Укажите ширину кромки в рулоне.</span>
               </label>
             </div>
           </div>
@@ -600,4 +600,4 @@ body[data-panel-scenario="standard"] [data-size-extra] {display:none!important}
         Расчёт является предварительным и не является публичной офертой.
       </p>
     </div>
-  </dialog><script src="../../vendor/pdfmake/pdfmake.min.js"></script><script src="../../vendor/pdfmake/vfs_fonts.js"></script><script src="../../js/core/panels-core.js"></script><script src="../../js/core/quick-common.js"></script><script src="../../js/core/specification-state.js"></script><script src="../../js/quick-panels.js?v=20261109-audit-fixes"></script><script src="../../js/detailed-panels.js?v=20261109-audit-fixes"></script></body></html>
+  </dialog><script src="../../vendor/pdfmake/pdfmake.min.js"></script><script src="../../vendor/pdfmake/vfs_fonts.js"></script><script src="../../js/core/panels-core.js"></script><script src="../../js/core/quick-common.js"></script><script src="../../js/core/specification-state.js"></script><script src="../../js/quick-panels.js?v=20261109-audit-fixes"></script><script src="../../js/detailed-panels.js?v=20261112-manual-roll-width"></script></body></html>

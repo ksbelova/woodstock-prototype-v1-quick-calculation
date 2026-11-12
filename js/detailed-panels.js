@@ -1723,7 +1723,7 @@
       normalizeEdgeLookup(item.veneerName || item.displayName) === normalizeEdgeLookup(group.displayName));
     const boundId = controls.materialInput?.dataset?.catalogItemId || "";
     const bound = boundId ? candidates.find((item) => item.id === boundId) : null;
-    const requestedWidth = Object.prototype.hasOwnProperty.call(options,"widthMm") ? num(options.widthMm) : num(controls.widthSelect.value);
+    const requestedWidth = Object.prototype.hasOwnProperty.call(options,"widthMm") ? num(options.widthMm) : num(quickRollWidthIsManual(which) ? controls.orderWidthInput.value : controls.widthSelect.value);
     const byWidth = list => list.find(item => !item.orderedProgram && edgeCatalogWidths(item).includes(requestedWidth))
       || list.find(item => item.orderedProgram && edgeCatalogWidths(item).includes(requestedWidth))
       || list.find(item => !item.orderedProgram) || list[0] || null;
@@ -1772,11 +1772,43 @@
     controls.materialClear.classList.toggle("is-hidden", !value);
   }
 
+  function quickRollWidthIsManual(which) {
+    return isQuickStandardPanel() && which === "separate";
+  }
+
+  function quickRollWidthRange(typeId, thickness) {
+    const row = (data?.orderedEdgeCatalog || []).find(item => item.typeId === typeId &&
+      (edgeTypeById(typeId)?.thicknessMode === "none" || Number(item.thicknessMm) === thickness));
+    return row?.widthRangeMm || null;
+  }
+
   function syncEdgeWidthOptions(which = "attached", { preserve = true } = {}) {
     const controls = edgeControls(which);
     const automaticAttached = which === "attached" && (isDetailedPanelCalculation() || isQuickDetailsPanel());
     if (automaticAttached) edgeWidthAutomatic.attached = true;
     controls.orderWidthInput.readOnly = automaticAttached;
+    if (quickRollWidthIsManual(which)) {
+      edgeWidthAutomatic.separate = false;
+      const type = edgeTypeById(controls.typeSelect.value);
+      const range = quickRollWidthRange(type?.id, currentEdgeThickness(which));
+      controls.widthField.classList.add("is-hidden");
+      controls.orderWidthField.classList.remove("is-hidden");
+      controls.orderWidthField.removeAttribute("data-quick-hidden");
+      controls.orderWidthInput.readOnly = false;
+      controls.orderWidthInput.disabled = !type;
+      controls.orderWidthInput.required = form.edgeModeSelect.value === "separate";
+      controls.orderWidthInput.setAttribute("aria-required", String(controls.orderWidthInput.required));
+      controls.orderWidthInput.min = range?.min ?? 19;
+      if (range) controls.orderWidthInput.max = range.max;
+      else controls.orderWidthInput.removeAttribute("max");
+      controls.orderWidthInput.placeholder = range ? `От ${range.min} до ${range.max}` : "Укажите ширину";
+      const hint = controls.orderWidthField.querySelector(".field__note");
+      if (hint) hint.textContent = range ? `Допустимая ширина — от ${range.min} до ${range.max} мм.` : "Укажите ширину кромки в рулоне.";
+      if (!preserve) controls.orderWidthInput.value = "";
+      controls.widthSelect.value = "";
+      controls.orderPriceField?.classList.add("is-hidden");
+      return;
+    }
     const type = edgeTypeById(controls.typeSelect?.value);
     const rawName = controls.materialInput.value.trim();
     const group = edgeNameGroupForInput(which);
@@ -1911,7 +1943,7 @@
     const customOrder = Boolean(type && rawName && (!group || (group && thicknessRequired && Number.isFinite(thickness) && !item)));
     const selectedStockWidth = Object.prototype.hasOwnProperty.call(options, "widthMm") ? num(options.widthMm) : num(controls.widthSelect.value);
     const requestedOrderWidth = Object.prototype.hasOwnProperty.call(options, "widthMm") ? num(options.widthMm) : num(controls.orderWidthInput.value);
-    const width = item
+    const width = quickRollWidthIsManual(which) ? requestedOrderWidth : item
       ? selectedStockWidth
       : customOrder
         ? (Number.isFinite(requestedOrderWidth) ? requestedOrderWidth : selectedStockWidth)
@@ -1952,10 +1984,16 @@
     else if (thicknessRequired && !Number.isFinite(thickness)) validationError = "Выберите толщину кромки.";
     else if (!Number.isFinite(width) || width <= 0) validationError = "Выберите или укажите ширину кромки.";
 
+    if (quickRollWidthIsManual(which) && type && Number.isFinite(width)) {
+      const range = quickRollWidthRange(type.id, thickness);
+      if (range && (width < range.min || width > range.max || !Number.isInteger(width))) {
+        validationError = `Укажите целую ширину кромки от ${range.min} до ${range.max} мм.`;
+      }
+    }
     if (!validationError && customOrder && Number.isFinite(manualOrderPricePerM2) && manualOrderPricePerM2 < 0) validationError = "Цена заказной кромки не может быть отрицательной.";
     if (!validationError && item?.orderedProgram && !catalogPriced) validationError = `Ширина заказной кромки должна быть от ${item.widthRangeMm.min} до ${item.widthRangeMm.max} мм.`;
     if (!validationError && isDetailedPanelCalculation() && which === "attached" && !Number.isFinite(detailedFinishedThicknessMm())) validationError = "Итоговая толщина изделия не определена: нужны подтверждённые толщины облицовки обеих сторон.";
-    if (!validationError && (which === "attached" || isQuickStandardPanel() && which === "separate") && Number.isFinite(width) && !edgeWidthFitsProduct(width)) validationError = isDetailedPanelCalculation()
+    if (!validationError && which === "attached" && Number.isFinite(width) && !edgeWidthFitsProduct(width)) validationError = isDetailedPanelCalculation()
       ? "Ширина кромки для кромления должна превышать итоговую толщину изделия минимум на 4 мм."
       : Number.isFinite(quickPanelFinishedThicknessMm())
         ? "Ширина кромки должна превышать итоговую толщину изделия минимум на 4 мм."
@@ -7798,9 +7836,9 @@
       if (type && !Number.isFinite(currentEdgeThickness(which))) {
         add(`${which}EdgeThickness`, "толщину кромки", controls.thicknessSelect, "Выберите толщину кромки.");
       }
-      if (selection && !Number.isFinite(selection.widthMm)) {
+      if (selection && (!Number.isFinite(selection.widthMm) || (quickRollWidthIsManual(which) && selection.validationError && /ширин/.test(selection.validationError)))) {
         const widthControl = controls.orderWidthField?.classList.contains("is-hidden") ? controls.widthSelect : controls.orderWidthInput;
-        add(`${which}EdgeWidth`, "ширину кромки", widthControl, "Выберите или укажите ширину кромки.");
+        add(`${which}EdgeWidth`, "ширину кромки", widthControl, selection.validationError || "Выберите или укажите ширину кромки.");
       }
       if (edgeMode === "separate") {
         const meters = num(form.separateEdgeMetersInput.value);
@@ -8160,7 +8198,7 @@
     syncQuickWallEdge();
     syncEdgeTypeOptions("attached");
     syncEdgeTypeOptions("separate");
-    if (isQuickStandardPanel()) edgeWidthAutomatic.separate = true;
+    if (isQuickStandardPanel()) edgeWidthAutomatic.separate = false;
     syncEdgeWidthOptions("attached", { preserve: true });
     syncEdgeWidthOptions("separate", { preserve: true });
     syncSeparateEdgeMeters();
@@ -9635,7 +9673,7 @@
     form.edgeWidthSelect.addEventListener("change", () => { edgeWidthAutomatic.attached = false; markFieldTouched("attachedEdgeWidth"); recalc(); });
     form.separateEdgeWidthSelect.addEventListener("change", () => { edgeWidthAutomatic.separate = false; markFieldTouched("separateEdgeWidth"); recalc(); });
     form.edgeOrderWidthInput.addEventListener("input", () => { edgeWidthAutomatic.attached = false; recalc(); });
-    form.separateEdgeOrderWidthInput.addEventListener("input", () => { edgeWidthAutomatic.separate = false; recalc(); });
+    form.separateEdgeOrderWidthInput.addEventListener("input", () => { edgeWidthAutomatic.separate = false; markFieldTouched("separateEdgeWidth"); recalc(); });
     form.edgeOrderPriceInput?.addEventListener("input", recalc);
     form.separateEdgeOrderPriceInput?.addEventListener("input", recalc);
     form.edgeBevelSelect.addEventListener("change", recalc);
