@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const DATA_URL = "../../data/panels.json?v=20261103-ordered-edge";
+  const DATA_URL = "../../data/panels.json?v=20261112-mdf-third-format";
   const Core = window.WoodstockPanelsCore;
   // Общая спецификация: инженерная доска уже сохраняется в этот же ключ.
   const SPEC_STORAGE_KEY = "woodstockDetailedSpecification";
@@ -3779,7 +3779,20 @@
 
   function findStandardItem(size) {
     if (manufacturingTypeForSize(size) !== "standard" || !isKnownStandardSize(size)) return null;
-    return standardCandidateRows().find((x) => sameSizePair(size.length, size.width, x.lengthMm, x.widthMm)) || null;
+    const candidates = standardCandidateRows();
+    const exact = candidates.find(x => sameSizePair(size.length, size.width, x.lengthMm, x.widthMm));
+    if (exact) return exact;
+    // A confirmed third of the sheet retains the full sheet's price per m².
+    if (![16, 18].includes(parseThicknessComposition(currentBaseThicknessRaw()).total) ||
+        !sameSizePair(size.length, size.width, 2800, 686)) return null;
+    const source = candidates.find(x => sameSizePair(2800, 2070, x.lengthMm, x.widthMm));
+    if (!source) return null;
+    const areaRatio = (2800 * 686) / (2800 * 2070);
+    const pricesPerSheet = Object.fromEntries(Object.entries(source.pricesPerSheet || {}).map(([key, value]) =>
+      [key, Number.isFinite(num(value)) ? num(value) * areaRatio : value]));
+    return { ...source, id: `${source.id}:2800x686`, sourceStandardItemId: source.id,
+      name: `${source.name} · часть 2800×686`, lengthMm: 2800, widthMm: 686, pricesPerSheet };
+
   }
 
   function classifySize(size) {
