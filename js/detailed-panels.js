@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const DATA_URL = "../../data/panels.json?v=20261112-mdf-third-format";
+  const DATA_URL = "../../data/panels.json?v=20261112-dsp-calibration-data";
   const Core = window.WoodstockPanelsCore;
   // Общая спецификация: инженерная доска уже сохраняется в этот же ключ.
   const SPEC_STORAGE_KEY = "woodstockDetailedSpecification";
