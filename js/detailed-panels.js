@@ -528,9 +528,7 @@
   }
 
   function twoSidedVeneerRequirementMessage() {
-    return document.body.classList.contains("quick-panels-page")
-      ? "Шпон толщиной 1,5 мм и более требует шпона с двух сторон."
-      : "Шпон толщиной 2 мм и более требует двух фанерованных сторон.";
+    return "Шпон толщиной 2 мм и более требует двух фанерованных сторон.";
   }
 
   function isQuickWallPanel() {
@@ -538,12 +536,9 @@
   }
 
   function requiresTwoFaceSides(thickness) {
-    // В подробном расчёте шпон 1,5 мм допускает одну сторону с черновым
-    // шпоном на обороте или две лицевые стороны (Woodstock, 23.10).
-    if (isQuickWallPanel() || isDetailedPanelCalculation()) {
-      return Number.isFinite(thickness) && thickness >= 2 - 0.001;
-    }
-    return isAtLeastOnePointFive(thickness);
+    // Шпон 1,5 мм допускает одну лицевую сторону с черновым оборотом
+    // или две лицевые стороны во всех режимах (Woodstock, 23.10).
+    return Number.isFinite(thickness) && thickness >= 2 - 0.001;
   }
 
   let quickWallPaperResetHint = "";
