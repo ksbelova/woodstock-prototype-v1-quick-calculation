@@ -55,19 +55,22 @@
   }
   function inProduction(record){return productionScope().some(item=>item.id===record.id);}
   function effectiveWarnings(record){return inProduction(record)&&quoteState().valid&&materialsComplete(record)?(record.warnings||[]).filter(note=>!/ставк|стоимость.*производ|цен.*производ|производственн.*сумм|производственн.*стоим/i.test(note)):(record.warnings||[]);}
+  function separatelyAddedMaterial(record,item){
+    return (record.calibration?.separatelyPriced && /^Калибровка основы$/.test(item.label)) || /^(Шпон|Чернов|Готовая рубашка)/.test(item.label) || (record.edge?.mode==='separate' && /^Кромка отдельно — материал/.test(item.label));
+  }
   function materialParts(record){
-    return (record.specification?.breakdown||[]).filter(item=>(record.calibration?.separatelyPriced && /^Калибровка основы$/.test(item.label)) || /^(Шпон|Чернов|Бумага|Готовая рубашка|Кромка(?: отдельно)? — материал)/.test(item.label));
+    return (record.specification?.breakdown||[]).filter(item=>separatelyAddedMaterial(record,item));
   }
   function materialKnown(record){
     const subtotal = materialParts(record).reduce((sum, item) =>
       sum + (Number.isFinite(item.value) ? item.value : 0), 0);
-    return roundMoney(subtotal + edgeDiscount(record).delta);
+    return roundMoney(subtotal + (record.edge?.mode==='separate'?edgeDiscount(record).delta:0));
   }
   function materialsComplete(record){
     if(record.sizes?.some(row=>row.productionFitStatus==='unconfirmed'))return false;
-    const missing=(record.sizes||[]).flatMap(row=>row.pendingCosts||[]).filter(reason=>!productionReason(reason));
+    const missing=(record.sizes||[]).flatMap(row=>row.pendingCosts||[]).filter(reason=>!productionReason(reason)&&!(record.edge?.mode==='attached' && /^Материал кромки:/.test(reason)));
     return !missing.length && Object.values(record.pricing?.veneer||{}).flat().every(item=>Number.isFinite(item.calculatedCost)&&!item.condition?.unresolved&&!item.condition?.requiresPriceAgreement) && (record.veneerConsumptions||[]).every(item=>Number.isFinite(item.materialCost)) && (record.pricing?.readyShirts||[]).every(item=>item.requirementStatus==='calculated'&&Number.isFinite(item.materialCost)&&!item.priceCondition?.unresolved) &&
-      (record.edge?.mode==='none'||!record.edge||['calculated','calculated_manual_order_price','not_required'].includes(record.edge.materialPricingStatus));
+      (record.edge?.mode==='none'||record.edge?.mode==='attached'||!record.edge||['calculated','calculated_manual_order_price','not_required'].includes(record.edge.materialPricingStatus));
   }
   function quoteSignature(){
     // Include the complete production request. Descriptive order/contact edits do not affect it.
@@ -189,12 +192,12 @@
     if(edge.mode==='attached'){
       (edge.positionSettings||[]).filter(item=>item.applies).forEach(item=>rows.push([(index+1)+'.'+item.position,join([edge.typeName,edge.displayName||edge.veneerName||edge.name,edge.comment,item.priceCatalogSource||edge.priceCatalogSource]),n(item.widthMm??edge.widthMm)+' / '+n(item.thicknessMm??edge.thicknessMm),item.sidesName||item.sides||item.sidesId||'—',n(item.geometricMeters),n(item.calculatedMeters),money(item.pricePerRunningM??item.selection?.pricePerRunningM??edge.pricePerRunningM),'В составе итога ниже','В составе итога ниже']));
     }
-    rows.push([...base,edge.mode==='attached'?'Итого по изделию':edge.sides||'—',n(edge.geometricMeters),join([n(edge.orderedMeters??edge.meters??edge.calculatedMeters),edge.manuallyAdjusted?'Ручная корректировка':'Автоматически']),money(edge.pricePerRunningM),money(edge.materialCost),edge.operationPricingStatus==='included_in_production_quote'?'В стоимости производства':edge.operationPricingStatus==='not_required'?'Не требуется':money(edge.operationCost)]);
+    rows.push([...base,edge.mode==='attached'?'Итого по изделию':edge.sides||'—',n(edge.geometricMeters),join([n(edge.orderedMeters??edge.meters??edge.calculatedMeters),edge.manuallyAdjusted?'Ручная корректировка':'Автоматически']),money(edge.pricePerRunningM),inProduction(record)&&edge.mode==='attached'?(quoteState().valid?'В стоимости производства':'Уточняется'):money(edge.materialCost),edge.operationPricingStatus==='included_in_production_quote'?'В стоимости производства':edge.operationPricingStatus==='not_required'?'Не требуется':money(edge.operationCost)]);
     return rows;
   });}
   function conditions(){return records.flatMap((record,index)=>{
     const prefix=String(index+1),rows=[];
-    edgeDiscount(record).entries.filter(entry=>entry.condition).forEach(entry=>rows.push([prefix,'Материал кромки',entry.condition.name,'Общий метраж '+n(entry.total)+' пог. м',money(entry.rate)+' / пог. м']));
+    edgeDiscount(record).entries.filter(entry=>entry.condition&&!(inProduction(record)&&record.edge?.mode==='attached')).forEach(entry=>rows.push([prefix,'Материал кромки',entry.condition.name,'Общий метраж '+n(entry.total)+' пог. м',money(entry.rate)+' / пог. м']));
     if(record.productType==='flooring'){
       if(record.discountPercent)rows.push([prefix,'Изделие',record.pricingTier?.name||'Скидка',n(record.discountPercent)+'%',money(record.discountAmount)]);
       (record.markups||[]).filter(item=>item.percent).forEach(item=>rows.push([prefix,'Изделие',item.name||item.label||item.id,n(item.percent)+'%','Учтено в цене']));
@@ -203,7 +206,7 @@
       Object.entries(pricing.veneer||{}).forEach(([side,items])=>(Array.isArray(items)?items:[]).forEach(item=>{const condition=item.condition;if(condition&&condition.id!=='retail')rows.push([prefix,'Шпон '+side,condition.name,'Цена: '+money(item.finalPricePerM2)+' / м²',condition.unresolved?'Требует уточнения':'Учтено в цене']);}));
       (inProduction(record)?[]:pricing.mdf||[]).filter(item=>item.conditionId!=='retail').forEach(item=>rows.push([prefix,'Основа '+item.size,item.conditionName,n(item.actualConditionPercent)+'%',money(item.actualConditionPricePerSheet)+' / лист']));
       (inProduction(record)?[]:pricing.baseRates||[]).filter(item=>item.conditionId!=='retail'||item.actualDiscountPercent).forEach(item=>rows.push([prefix+(item.position?'.'+item.position:''),item.component,item.conditionName,n(item.actualDiscountPercent)+'%',money(item.finalRatePerM2)+' / м²']));
-      const edge=record.edge;if(edge?.priceCondition&&edge.priceCondition.id!=='retail')rows.push([prefix,'Кромка',edge.priceCondition.name,'Цена: '+money(edge.pricePerRunningM)+' / пог. м','Учтено в цене']);
+      const edge=record.edge;if(edge?.priceCondition&&edge.priceCondition.id!=='retail'&&!(inProduction(record)&&edge.mode==='attached'))rows.push([prefix,'Кромка',edge.priceCondition.name,'Цена: '+money(edge.pricePerRunningM)+' / пог. м','Учтено в цене']);
     }
     return rows;
   });}
@@ -593,6 +596,7 @@
   }
   function pdfTable(title,headers,rows,widths){return [{text:title,style:'sectionTitle'},{table:{headerRows:1,dontBreakRows:false,widths:Common.fitPdfTableWidths(widths||headers.map(()=>1),1.4),body:[headers.map(text=>({text,style:'tableHeader'})),...rows.map(row=>row.map(value=>String(value??'—')))]},layout:{...Common.pdfTableLayout(),paddingLeft:()=>1.4,paddingRight:()=>1.4},margin:[0,0,0,10]}];}
   function breakdownValue(record,item){
+    if(inProduction(record)&&!separatelyAddedMaterial(record,item))return quoteState().valid?'В стоимости производства':'Уточняется';
     const quotes=(record.productionCosts||[]).filter(quote=>quote.coveredReasons?.some(reason=>reason.startsWith('Калибровка:')));
     if(item.value===0&&/Калибровка/.test(item.label)&&quotes.length){
       return quotes.every(quote=>quote.status==='provided')?'В стоимости производства':quotes.some(quote=>quote.status==='provided')?'Частично в стоимости производства; остаток уточняется':'Уточняется';
