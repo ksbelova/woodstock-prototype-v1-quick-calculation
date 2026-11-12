@@ -82,17 +82,59 @@
  function removeReviewNotes(){
   document.querySelectorAll('.prototype-review-note,#calibrationPurchaseReviewNote').forEach(note=>note.remove());
  }
+ function syncFixedSummary(result){
+  const form=api.form;
+  let list=document.querySelector('.spec-panel .spec-list');
+  if(!list){list=document.createElement('dl');list.className='spec-list spec-list--full';document.querySelector('.spec-panel .area-summary').before(list);}
+  const text=control=>control?.value?control.selectedOptions?.[0]?.textContent.trim()||control.value:'—';
+  const row=(id,label,value,visible=true)=>{
+   let valueNode=$(id);
+   if(!valueNode){const item=document.createElement('div'),term=document.createElement('dt');term.textContent=label;valueNode=document.createElement('dd');valueNode.id=id;item.append(term,valueNode);list.append(item);}
+   valueNode.textContent=value||'—';valueNode.parentElement.classList.toggle('is-hidden',!visible);
+  };
+  const field=(control,fixed)=>control?.closest('.field')?.toggleAttribute('data-summary-fixed',fixed);
+  if(wall){
+   const explanation=$('quickFinishExplanation');
+   if(explanation&&form.finishSelect.closest('.field').contains(explanation))form.finishSelect.closest('.field').after(explanation);
+   row('quickFixedBase','Основа',text(form.baseSelect));
+   row('quickFixedBaseThickness','Толщина основы',text(form.baseThicknessSelect));
+   row('quickVeneeredSides','Фанеровка',text(form.veneeredSidesSelect));
+   row('quickReverseSide','Обратная сторона',text(form.reverseSideSelect));
+   row('quickFixedEdgeThickness','Толщина кромки',text(form.edgeThicknessSelect));
+   row('quickFixedEdgeSides','Стороны облицовки',text(form.edgeSidesSelect));
+   row('quickFixedFinish','Финишное покрытие',text(form.finishSelect));
+  }else{
+   const fixedSides=form.veneeredSidesSelect.disabled&&!!form.veneerThicknessSelect.value;
+   field(form.veneeredSidesSelect,fixedSides);
+   row('quickFixedSides','Фанеровка',text(form.veneeredSidesSelect),fixedSides);
+   const oneSide=form.veneeredSidesSelect.value==='1';
+   const paper=form.reverseSideSelect.querySelector('option[value="paper"]');
+   const fixedBack=!!form.veneerThicknessSelect.value&&oneSide&&(!paper||paper.disabled||paper.hidden);
+   field(form.reverseSideSelect,fixedBack);
+   row('quickFixedBack','Обратная сторона',text(form.reverseSideSelect),fixedBack);
+  }
+  const fixedLayout=standard&&form.layoutSelect.disabled&&!!form.layoutSelect.value;
+  field(form.layoutSelect,fixedLayout);
+  row('quickFixedLayout','Раскладка лицевой стороны',text(form.layoutSelect),fixedLayout);
+  const fixedBackLayout=standard&&form.layoutBSelect.disabled&&form.veneeredSidesSelect.value==='2'&&!!form.layoutSelect.value;
+  field(form.layoutBSelect,standard&&form.layoutBSelect.disabled);
+  row('quickFixedBackLayout','Раскладка обратной стороны',text(form.layoutBSelect)==='—'?text(form.layoutSelect):text(form.layoutBSelect),fixedBackLayout);
+  if(standard)row('quickFixedFinish','Финишное покрытие',text(form.finishSelect));
+  const attached=result?.edge?.mode==='attached';
+  row('quickFixedEdgeMode','Кромка',text(form.edgeModeSelect),!standard&&attached);
+  row('quickFixedEdgeType','Тип кромки',text(form.edgeTypeSelect),!standard&&attached);
+  const fixedWidth=attached&&(wall||form.edgeWidthSelect.disabled||form.edgeOrderWidthInput.readOnly);
+  field(form.edgeWidthSelect,fixedWidth);field(form.edgeOrderWidthInput,fixedWidth);
+  row('quickEdgeWidth','Ширина кромки',Number.isFinite(result?.edge?.widthMm)?number(result.edge.widthMm)+' мм':'—',wall||fixedWidth||standard&&result?.edge?.mode==='separate');
+  const finish=!!form.finishSelect.value&&form.finishSelect.value!=='none';
+  const fixedScheme=finish&&['lacquer_acrylic','enamel'].includes(form.finishSelect.value);
+  row('quickFixedFinishScheme','Схема покрытия',form.finishSelect.value==='enamel'?text(form.enamelVariantSelect):text(form.lacquerProcessSelect),fixedScheme);
+  const fixedFinishSides=finish&&form.finishSidesSelect.closest('.field').hasAttribute('data-quick-hidden');
+  row('quickFixedFinishSides','Стороны покрытия',text(form.finishSidesSelect),fixedFinishSides);
+ }
  function render(result){
   if(syncing)return;
   const form=api.form;
-  if(wall&&$('quickVeneeredSides')) $('quickVeneeredSides').textContent=form.veneerThicknessSelect.value ? (Number(form.veneeredSidesSelect.value)===2?'с двух сторон':'с одной стороны') : '—';
-  if(wall&&$('quickReverseSide')) {
-   const thickness=Number(form.veneerThicknessSelect.value);
-   const two=Number(form.veneeredSidesSelect.value)===2;
-   $('quickReverseSide').textContent=!form.veneerThicknessSelect.value?'—':two
-    ? 'тот же шпон, что и на лицевой стороне'
-    : form.reverseSideSelect.value==='paper'?'бумага':'черновой шпон';
-  }
   const certified=wall&&result?.base?.id==='gsp';
   if(certified!==certifiedState){
    certifiedState=certified;syncing=true;
@@ -123,6 +165,7 @@
   const boring=$('boringSelect')?.value==='yes';
   const hasKnownPrice=Number.isFinite(result?.finalTotal)&&result.finalTotal>0;
   removeReviewNotes();
+  syncFixedSummary(result);
   const partial=(hasKnownPrice||ready)&&(!ready||!result.priceCalculationComplete||boring);
   $('resultTotal').textContent=result?.pricingUnavailable?'Стоимость уточняется':!hasKnownPrice&&!ready?'—':partial?(hasKnownPrice?money(result.finalTotal)+' *':'Стоимость рассчитает менеджер'):money(result.finalTotal);
   $('priceLabel').textContent='Ориентировочная стоимость с НДС';

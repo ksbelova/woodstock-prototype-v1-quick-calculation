@@ -8201,14 +8201,13 @@
     updateDetailedSideHints();
     syncVeneerActualOverridesWithDemand();
     if (view?.fixedWallConfiguration) {
-      // Fixed choices remain visible, including after restoring an older calculation.
-      [form.baseSelect, form.edgeModeSelect].forEach(input => input.closest(".form-block").removeAttribute("data-quick-hidden"));
+      // Fixed choices are shown in the quick summary; their controls retain calculation state.
+      form.baseSelect.closest(".form-block").setAttribute("data-summary-fixed", "");
       [form.baseSelect, form.baseThicknessSelect, form.veneeredSidesSelect, form.reverseSideSelect,
         form.edgeSidesSelect, form.edgeThicknessSelect, form.finishSelect, form.lacquerProcessSelect].forEach(input => {
         input.disabled = true;
         const field = input.closest(".field");
-        field?.removeAttribute("data-quick-hidden");
-        field?.classList.remove("is-hidden");
+        field?.setAttribute("data-summary-fixed", "");
       });
       form.veneerSelectionDetailsGrid.classList.remove("is-hidden");
       form.veneerSideBGrid.classList.remove("is-hidden");
