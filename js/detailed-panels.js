@@ -2490,7 +2490,7 @@
   }
 
   function separatelyPricedCalibration(base = selectedBase()) {
-    return isDetailedPanelCalculation() && (base?.id === "dsp" || base?.id?.startsWith("plywood_"));
+    return isDetailedPanelCalculation() && base?.id === "dsp";
   }
 
   function calibrationRequiredForBase(base = selectedBase()) {
@@ -2614,7 +2614,9 @@
       return;
     }
     form.calibrationSelect.classList.remove("is-hidden");
-    if (form.calibrationRequiredNote) form.calibrationRequiredNote.textContent = "Калибровка обязательна для выбранной основы.";
+    if (form.calibrationRequiredNote) form.calibrationRequiredNote.textContent = isDetailedPanelCalculation() && base?.id?.startsWith("plywood_")
+      ? "Калибровка обязательна и входит в общую стоимость от производства."
+      : "Калибровка обязательна для выбранной основы.";
     const available = calibrationAvailableForBase(base);
     const required = calibrationRequiredForBase(base);
     form.calibrationFields?.classList.toggle("is-hidden", !available);
@@ -7110,7 +7112,7 @@
 
     const tech = result.techOperations || {};
     if (tech.calibration) {
-      characteristics.push(specRow("Калибровка", gspCalibrationIncluded() ? "Обязательная калибровка учтена в стоимости основы" : "Да"));
+      characteristics.push(specRow("Калибровка", gspCalibrationIncluded() ? "Обязательная калибровка учтена в стоимости основы" : result.techOperations?.calibrationIncludedInProductionCost ? "Входит в общую стоимость от производства" : "Да"));
       if (Number.isFinite(tech.baseThicknessAfterCalibrationMm)) {
         characteristics.push(specRow("Толщина основы после калибровки", specMm(tech.baseThicknessAfterCalibrationMm), 1));
       }
