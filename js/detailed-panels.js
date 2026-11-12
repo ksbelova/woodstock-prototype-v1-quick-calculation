@@ -2799,10 +2799,16 @@
     if (form.veneerBModeHint) form.veneerBModeHint.textContent = "";
     if (readyShirtWithoutThickness && form.veneerBModeSelect.value === "other") form.veneerBModeSelect.value = "same";
 
+    const quickSidesChoice = document.body.classList.contains("quick-panels-page") && !isQuickWallPanel();
     if (requiresTwoFaceSides(thickness)) {
       form.veneeredSidesSelect.value = "2";
       form.veneeredSidesSelect.disabled = true;
+      if (quickSidesChoice) form.veneeredSidesSelect.dataset.forcedByThickness = "true";
     } else {
+      if (quickSidesChoice && form.veneeredSidesSelect.dataset.forcedByThickness) {
+        form.veneeredSidesSelect.value = "";
+        delete form.veneeredSidesSelect.dataset.forcedByThickness;
+      }
       form.veneeredSidesSelect.disabled = false;
     }
     form.veneerBModeSelect.disabled = false;

@@ -270,8 +270,8 @@
   $('downloadModalClose').addEventListener('click',()=>Common.closeDownloadModal($('downloadModal')));
   $('downloadModal').addEventListener('click',event=>{if(event.target===$('downloadModal'))Common.closeDownloadModal($('downloadModal'));});
   api.form.root.addEventListener('submit',event=>{event.preventDefault();submit();});
-  if(standard&&!api.form.veneeredSidesSelect.querySelector('option[value=""]')) api.form.veneeredSidesSelect.add(new Option('Выберите вариант',''),0);
-  api.form.veneeredSidesSelect.value=wall?'1':standard?'':'2';
+  if(!wall&&!api.form.veneeredSidesSelect.querySelector('option[value=""]')) api.form.veneeredSidesSelect.add(new Option('Выберите вариант',''),0);
+  api.form.veneeredSidesSelect.value=wall?'1':'';
   if(standard)api.form.finishSelect.value='none';
   else{
    api.form.finishSelect.querySelector('option[value="none"]')?.remove();api.form.finishSelect.add(new Option('Выберите покрытие',''),0);api.form.finishSelect.value='';
