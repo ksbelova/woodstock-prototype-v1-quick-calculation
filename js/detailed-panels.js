@@ -2156,7 +2156,7 @@
     }
 
     const minimum = separateEdgeMinimumMeters();
-    const valid = value >= minimum;
+    const valid = isDetailedPanelCalculation() || value >= minimum;
     setSeparateEdgeMetersError(valid ? "" : `Минимальный заказ кромки — ${minimum} пог. м.`);
     setSeparateEdgeMetersWarning("");
     recalc();
@@ -4160,7 +4160,9 @@
     if (isQuickStandardPanel() || isDetailedPanelCalculation()) {
       separateEdgeMetersManual = true;
       form.separateEdgeMetersReset?.classList.add("is-hidden");
-      if (form.separateEdgeMetersSummary) form.separateEdgeMetersSummary.textContent = "Минимальный заказ кромки 50 пог. м";
+      if (form.separateEdgeMetersSummary) form.separateEdgeMetersSummary.textContent = isDetailedPanelCalculation()
+        ? "Минимум 50 пог. м одинаковой кромки проверяется по сумме позиций в спецификации заказа."
+        : "Минимальный заказ кромки 50 пог. м";
       setSeparateEdgeMetersWarning("");
       return;
     }
@@ -6197,7 +6199,7 @@
         edge.validationError = "Укажите требуемый метраж отдельной кромки.";
         warnings.push(edge.validationError);
         hasPartialPrice = true;
-      } else if (Number.isFinite(minMeters) && meters < minMeters) {
+      } else if (!isDetailedPanelCalculation() && Number.isFinite(minMeters) && meters < minMeters) {
         edge.valid = false;
         edge.validationError = `Минимальный заказ кромки — ${minMeters} пог. м.`;
         warnings.push(edge.validationError);
@@ -7832,7 +7834,7 @@
         const minMeters = separateEdgeMinimumMeters();
         if (!Number.isFinite(meters) || meters <= 0) {
           add("separateEdgeMeters", "метраж отдельной кромки", form.separateEdgeMetersInput, "Укажите требуемый метраж отдельной кромки.", form.separateEdgeMetersError);
-        } else if (Number.isFinite(minMeters) && meters < minMeters) {
+        } else if (!isDetailedPanelCalculation() && Number.isFinite(minMeters) && meters < minMeters) {
           add("separateEdgeMeters", "метраж отдельной кромки", form.separateEdgeMetersInput, `Минимальный заказ кромки — ${minMeters} пог. м.`, form.separateEdgeMetersError);
         }
       }
@@ -9706,7 +9708,7 @@
       setSeparateEdgeMetersError("");
       const meters = num(form.separateEdgeMetersInput.value);
       const minMeters = separateEdgeMinimumMeters();
-      setSeparateEdgeMetersWarning(Number.isFinite(meters) && meters > 0 && Number.isFinite(minMeters) && meters < minMeters
+      setSeparateEdgeMetersWarning(!isDetailedPanelCalculation() && Number.isFinite(meters) && meters > 0 && Number.isFinite(minMeters) && meters < minMeters
         ? `Минимальный заказ кромки — ${minMeters} пог. м.`
         : "");
       recalc();

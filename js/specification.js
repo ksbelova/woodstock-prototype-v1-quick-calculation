@@ -144,6 +144,19 @@
     ['Себестоимость производства с НДС',money(state.cost)],['Наценка',state.valid?n(state.markup)+'%':'Уточняется'],
     ['Производство для клиента с НДС',money(state.clientCost)],['Статус',state.valid?'Подтверждено':'Требуется подтверждение стоимости производства']]:[];}
 
+  function edgeMinimumIssues(){
+    const groups=new Map();
+    records.filter(record=>record.productType==='plate'&&record.edge?.mode==='separate').forEach(record=>{
+      const edge=record.edge;
+      // Only exactly matching roll products share a minimum; panel edging is outside this check.
+      const key=JSON.stringify([edge.catalogItemId||record.id,edge.typeId,edge.widthMm,edge.thicknessMm]);
+      const group=groups.get(key)||{meters:0,name:edge.displayName||edge.veneerName||edge.name||'Кромка',width:edge.widthMm,thickness:edge.thicknessMm};
+      group.meters+=Number(edge.orderedMeters??edge.meters)||0;
+      groups.set(key,group);
+    });
+    return [...groups.values()].filter(group=>group.meters<50-1e-9).map(group=>
+      group.name+' · '+n(group.width)+' × '+n(group.thickness)+' мм: '+n(group.meters)+' пог. м из минимальных 50 пог. м.');
+  }
   function totals(){
     if(records.some(record=>record.pricingUnavailable) || editorController?.result?.()?.pricingUnavailable)return {total:null,vat:null,partial:true};
     const values=records.map(known).filter(Number.isFinite);
@@ -158,7 +171,7 @@
       ? (hasKnownAmount?roundMoney(total*0.22/1.22):null)
       : records.length&&values.length===records.length&&vats.every(Number.isFinite)
         ? roundMoney(vats.reduce((sum,value)=>sum+value,0)):null;
-    return {total,vat,partial:records.some(partial)||services().length>0};
+    return {total,vat,partial:records.some(partial)||services().length>0||edgeMinimumIssues().length>0};
   }
   function table(headers,rows,classes=''){
     return '<div class="spec-table-wrap"><table class="spec-table '+classes+'"><thead><tr>'+headers.map(value=>'<th scope="col">'+esc(value)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+row.map(value=>'<td>'+esc(value??'—')+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';
@@ -549,6 +562,7 @@
     }
     $('edgeSection').classList.toggle('is-hidden',!rows.length);if(!rows.length){$('edgeTable').innerHTML='';return;}
     const container=document.createElement('div');container.innerHTML=table([...edgeHeaders,'Действия'],rows);
+    edgeMinimumIssues().forEach(message=>{const note=document.createElement('p');note.className='field-warning';note.textContent=message+' Добавьте недостающий метраж одинаковой кромки или измените заказ.';container.append(note);});
     container.querySelectorAll('tbody tr').forEach((tr,i)=>{
       const last=!!editorController&&productType==='plate'&&editorController.result()?.edge?.mode!=='none'&&i===rows.length-1;
       if(last){
@@ -587,6 +601,7 @@
     finally{closeEditor();busy=false;render();}
   }
   function validateOrder(){
+    if(edgeMinimumIssues().length)return 'Минимальный заказ одинаковой кромки — 50 пог. м. '+edgeMinimumIssues().join(' ');
     for(const [id,label] of [['managerNameInput','менеджера'],['branchSelect','филиал'],['clientNameInput','имя клиента'],['clientPhoneInput','телефон']]){
       if(!$(id).value.trim()){ $(id).focus();return 'Укажите '+label+'.'; }
     }
@@ -604,6 +619,7 @@
     return money(item.value);
   }
   function buildPdf(){
+    if(edgeMinimumIssues().length)throw new Error('Минимальный заказ одинаковой кромки — 50 пог. м. '+edgeMinimumIssues().join(' '));
     const groups=[productType].map(type=>({type,rows:productRows(type)})).filter(group=>group.rows.length);
     const first=groups[0],result=totals(),before=[];
     if(!first)throw new Error('Добавьте хотя бы одну позицию.');
