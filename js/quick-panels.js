@@ -24,7 +24,7 @@
    if(!base||!['mdf','dsp'].includes(base.id))return false;
    const key=String(value),mode=standard?'standard':'exact';
    if(base.id==='mdf'&&key==='24')return false; // Legacy standard rates AC23:AC24 conflict with the exact-price classification; confirmation pending.
-   if(wall&&key!=='12')return false;
+   if(wall&&key!=='10')return false;
    const status=data.baseThicknessScenarioPriceModes?.[base.id]?.[key]?.[mode]||data.baseThicknessPriceModes?.[base.id]?.[key];
    const rates=standard?data.standardProductionRates:data.nonstandardRates;
    return status==='automatic'&&rates.some(rate=>rate.baseId===base.id&&String(rate.thickness)===key&&Number.isFinite(rate.ratePerM2));
@@ -104,7 +104,7 @@
   if(wall){
    baseBlock.removeAttribute('data-summary-fixed');
    info('quickFixedBaseInfo',baseBlock,text(form.baseSelect)+' · '+text(form.baseThicknessSelect),
-    'На эту основу наклеивается выбранный вами шпон. В кратком расчёте стеновых панелей используем МДФ толщиной 12 мм; материал и толщина основы зафиксированы для предварительного расчёта.');
+    'Плита, которую мы фанеруем шпоном. В расчёте МДФ 10 мм, из него делается большинство стеновых панелей. При необходимости менеджер подберёт другую основу.');
   }
   const fixedSides=wall||form.veneeredSidesSelect.disabled&&!!form.veneerThicknessSelect.value;
   if(!wall)field(form.veneeredSidesSelect,fixedSides);
@@ -116,11 +116,15 @@
   const fixedBackLayout=standard&&form.layoutBSelect.disabled&&form.veneeredSidesSelect.value==='2'&&!!form.layoutSelect.value;
   field(form.layoutBSelect,standard&&form.layoutBSelect.disabled);
   const veneerParameters=[],veneerNotes=[];
-  if(fixedSides)veneerParameters.push('Фанеровка — '+text(form.veneeredSidesSelect));
-  if(fixedBack){
+  if(wall){
+   veneerParameters.push('Лицевая сторона в выбранном шпоне, обратная в черновом');
+   veneerNotes.push('Черновой шпон технический, любой породы, с природными особенностями древесины. Он не даёт панели повести, а после монтажа его не видно. При необходимости менеджер рассчитает фанеровку с двух сторон.');
+  }
+  if(!wall&&fixedSides)veneerParameters.push('Фанеровка — '+text(form.veneeredSidesSelect));
+  if(!wall&&fixedBack){
    veneerParameters.push('На обороте — '+text(form.reverseSideSelect).toLocaleLowerCase('ru'));
    veneerNotes.push('Обратная сторона закрывается техническим шпоном. Он нужен, чтобы изделие не повело. На нём допустимы природные особенности древесины.');
-  }else if(fixedSides)veneerNotes.push('Для шпона выбранной толщины предусмотрена фанеровка с двух сторон. Материал обратной стороны укажите ниже.');
+  }else if(!wall&&fixedSides)veneerNotes.push('Для шпона выбранной толщины предусмотрена фанеровка с двух сторон. Материал обратной стороны укажите ниже.');
   if(fixedLayout){veneerParameters.push('Раскладка — '+text(form.layoutSelect));veneerNotes.push('Для выбранного материала в кратком расчёте используется прямая раскладка.');}
   if(fixedBackLayout){veneerParameters.push('Раскладка оборота — '+(text(form.layoutBSelect)||text(form.layoutSelect)));veneerNotes.push('Раскладка обратной стороны повторяет лицевую.');}
   info('quickFixedVeneerInfo',veneerBlock,veneerParameters.join(' · '),veneerNotes.join(' '),'',veneerParameters.length>0);
@@ -131,9 +135,9 @@
   const metersSummary=$('attachedEdgeMetersSummary');metersSummary?.closest('.field')?.toggleAttribute('data-summary-fixed',!standard&&attached);
   const edgeParameters=[],edgeNotes=[];
   if(wall){
-   edgeParameters.push(text(form.edgeSidesSelect));
-   if(form.edgeThicknessSelect.value)edgeParameters.push('Кромка '+text(form.edgeThicknessSelect)+' мм');
-   edgeNotes.push('Кромка закрывает торцы панели. Для расчёта принята облицовка всего периметра. Ширина кромки подбирается автоматически с учётом итоговой толщины изделия. Породу кромки можно изменить ниже.');
+   edgeParameters.push('Кромка 0,6 мм по всему периметру');
+   edgeNotes.push('Закрывает все торцы панели. При необходимости менеджер рассчитает другую толщину кромки или стороны облицовки.');
+   edgeNotes.push('По умолчанию кромка в том же шпоне, что и лицевая сторона. Если нужна другая, введите название в поле.');
   }else if(attached){
    edgeParameters.push('Облицовка кромкой');
    if(text(form.edgeTypeSelect))edgeParameters.push(text(form.edgeTypeSelect));
@@ -142,7 +146,7 @@
    edgeParameters.push('Кромка в рулоне');
    edgeNotes.push('Рулон рассчитывается по указанным вами ширине и метражу. Запас к метражу не добавляется.');
   }
-  if(fixedWidth&&Number.isFinite(result?.edge?.widthMm))edgeParameters.push('Ширина '+number(result.edge.widthMm)+' мм');
+  if(!wall&&fixedWidth&&Number.isFinite(result?.edge?.widthMm))edgeParameters.push('Ширина '+number(result.edge.widthMm)+' мм');
   const edgeDetails=[];
   if(attached&&metersSummary?.textContent.trim()&&metersSummary.textContent.trim()!=='—')edgeDetails.push(metersSummary.textContent.trim());
   if(result?.edge?.priceCatalogSource)edgeDetails.push('Источник цены: '+result.edge.priceCatalogSource);
@@ -151,11 +155,12 @@
   const fixedScheme=finish&&['lacquer_acrylic','enamel'].includes(form.finishSelect.value);
   const fixedFinishSides=finish&&form.finishSidesSelect.closest('.field').hasAttribute('data-quick-hidden');
   const finishParameters=[];
-  if(wall||standard)finishParameters.push(text(form.finishSelect));
-  if(fixedScheme)finishParameters.push(text(form.finishSelect.value==='enamel'?form.enamelVariantSelect:form.lacquerProcessSelect));
-  if(fixedFinishSides)finishParameters.push(text(form.finishSidesSelect));
+  if(wall)finishParameters.push('Акриловый лак на лицевой стороне');
+  else if(standard)finishParameters.push(text(form.finishSelect));
+  if(!wall&&fixedScheme)finishParameters.push(text(form.finishSelect.value==='enamel'?form.enamelVariantSelect:form.lacquerProcessSelect));
+  if(!wall&&fixedFinishSides)finishParameters.push(text(form.finishSidesSelect));
   const finishExplanation=wall
-   ? 'Прозрачный акриловый лак сохраняет видимый рисунок шпона. В кратком расчёте принята схема «Грунт + лак» на лицевой стороне. Степень блеска выберите ниже.'
+   ? 'Прозрачный, сохраняет рисунок шпона. При необходимости менеджер рассчитает эмаль или другой лак.'
    : standard&&!finish?'В этом кратком расчёте плита рассчитывается без финишного покрытия. Если нужно покрытие, укажите пожелания в комментарии к заказу.'
    : 'Для предварительного расчёта используется указанная технологическая схема покрытия. Доступные параметры финиша выберите ниже.';
   field(form.finishSelect,wall||standard);

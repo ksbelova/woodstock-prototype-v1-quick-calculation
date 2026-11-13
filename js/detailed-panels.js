@@ -559,7 +559,7 @@
           : "";
       backExplanation.classList.toggle("is-hidden", !thin && !thick);
     }
-    const paperAllowed = faceReady && Math.abs(thickness - 0.6) < 0.001
+    const paperAllowed = !window.WoodstockPanelsView?.fixedWallConfiguration && faceReady && Math.abs(thickness - 0.6) < 0.001
       && Math.abs(parseThicknessComposition(currentBaseThicknessRaw()).total - 10) < 0.001;
     form.veneeredSidesSelect.value = two ? "2" : "1";
     form.veneeredSidesSelect.disabled = true;
@@ -8169,8 +8169,8 @@
       positionFinishOverridesEnabled = false;
       positionEdgeOverridesEnabled = false;
       form.baseSelect.value = "mdf";
-      form.baseThicknessSelect.replaceChildren(new Option("12 мм", "12"));
-      form.baseThicknessSelect.value = "12";
+      form.baseThicknessSelect.replaceChildren(new Option("10 мм", "10"));
+      form.baseThicknessSelect.value = "10";
       form.veneeredSidesSelect.value = "1";
       form.reverseSideSelect.value = "rough";
       form.edgeModeSelect.value = "attached";
