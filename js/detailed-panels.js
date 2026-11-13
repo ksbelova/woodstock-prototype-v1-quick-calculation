@@ -8214,8 +8214,8 @@
     updateDetailedSideHints();
     syncVeneerActualOverridesWithDemand();
     if (view?.fixedWallConfiguration) {
-      // Fixed choices are shown in the quick summary; their controls retain calculation state.
-      form.baseSelect.closest(".form-block").setAttribute("data-summary-fixed", "");
+      // Fixed choices are described in their quick form sections; controls retain calculation state.
+      form.baseSelect.closest(".form-block").removeAttribute("data-summary-fixed");
       [form.baseSelect, form.baseThicknessSelect, form.veneeredSidesSelect, form.reverseSideSelect,
         form.edgeSidesSelect, form.edgeThicknessSelect, form.finishSelect, form.lacquerProcessSelect].forEach(input => {
         input.disabled = true;
@@ -9931,6 +9931,28 @@
   }
   function restoreSpecificationState(state) {
     if (state?.version!==1) throw new Error('У позиции отсутствуют данные для редактирования.');
+    if (!isDetailedPanelCalculation()) {
+      // Informational text is rebuilt from restored values, not merged into live controls.
+      const savedForm = document.createElement("div");
+      savedForm.innerHTML = state.form.html;
+      const savedFiles = (state.form.files || []).map(entry => {
+        let node = savedForm;
+        entry.path.forEach(index => { node = node?.children[index]; });
+        return { entry, node };
+      });
+      const transient = '.quick-fixed-info,#quickFixedParametersNote';
+      savedForm.querySelectorAll(transient).forEach(node => node.remove());
+      form.root.querySelectorAll(transient).forEach(node => node.remove());
+      const files = savedFiles.map(({ entry, node }) => {
+        const path = [];
+        while (node && node !== savedForm) {
+          path.unshift(Array.from(node.parentElement.children).indexOf(node));
+          node = node.parentElement;
+        }
+        return { ...entry, path };
+      });
+      state = { ...state, form: { ...state.form, html: savedForm.innerHTML, files } };
+    }
     if (isDetailedPanelCalculation()) {
       const savedForm = document.createElement("div");
       savedForm.innerHTML = state.form.html;

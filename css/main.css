@@ -1983,3 +1983,31 @@ input[type="file"]::file-selector-button:hover {
 }
 .edge-side-diagram__right { grid-area: 2 / 3; }
 .edge-side-diagram__bottom { grid-area: 3 / 2; }
+
+/* Fixed parameters in the existing quick calculation sections. */
+.quick-panels-page .quick-fixed-info {
+  margin-bottom: 22px;
+}
+.quick-panels-page .quick-fixed-info[hidden],
+.quick-panels-page .quick-fixed-info__details[hidden] {
+  display: none;
+}
+.quick-panels-page .quick-fixed-info__parameters {
+  margin: 0 0 10px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.quick-panels-page .quick-fixed-info__parameters strong {
+  font-weight: 500;
+}
+.quick-panels-page .quick-fixed-info .field__note {
+  margin: 0;
+}
+.quick-panels-page .quick-fixed-info .quick-fixed-info__details {
+  margin-top: 10px;
+}
+.quick-panels-page .quick-fixed-request-note {
+  margin-bottom: 20px;
+}
