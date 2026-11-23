@@ -2011,3 +2011,33 @@ input[type="file"]::file-selector-button:hover {
 .quick-panels-page .quick-fixed-request-note {
   margin-bottom: 20px;
 }
+
+/* Detailed order: cards, administration accordions and persistent financial summary. */
+.spec-workspace { display:grid; grid-template-columns:minmax(0,1fr) 350px; gap:24px; align-items:start; }
+.spec-main { min-width:0; display:grid; gap:20px; }
+.spec-summary { position:sticky; top:24px; min-width:0; }
+.spec-position { border:1px solid var(--line); border-radius:18px; margin-top:18px; overflow:hidden; }
+.spec-position-head { display:flex; justify-content:space-between; align-items:start; gap:20px; padding:20px; }
+.spec-position-head h3 { font-size:19px; font-weight:500; margin:8px 0; }
+.spec-position-price { display:grid; gap:8px; text-align:right; flex-shrink:0; max-width:45%; }
+.spec-position-price strong { font-size:21px; font-weight:500; }
+.spec-position-details > summary, .spec-admin > summary { cursor:pointer; padding:16px 20px; font-weight:500; }
+.spec-position-details[open] > summary { border-bottom:1px solid var(--line); }
+.spec-admin { border:1px solid var(--line); border-radius:16px; margin-top:12px; }
+.spec-admin-body { padding:20px; }
+.spec-position-details > div { padding:0 16px; }
+.spec-position-details table thead { display:none; }
+.spec-position-details table, .spec-position-details tbody { display:block; }
+.spec-position-details tr { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); border-bottom:1px solid var(--line); padding:12px 0; }
+.specification-page .spec-position-details td { display:block; border:0; min-width:0; overflow-wrap:anywhere; }
+.spec-position-details td::before { content:attr(data-label); display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+.spec-position-details td:first-child, .spec-position-details td:last-child { grid-column:1/-1; }
+.specification-page .spec-position-details td:last-child button { display:inline-block; margin:4px; }
+.spec-summary .spec-table-wrap { overflow-wrap:anywhere; }
+.specification-page .spec-summary th, .specification-page .spec-summary td { min-width:0; padding:8px; }
+.spec-summary .next-step-button { width:100%; }
+.spec-summary #managerCalculationDetails { margin-top:16px; }
+.spec-summary #managerCalculationDetails summary { cursor:pointer; }
+@media(max-width:1050px) { .spec-workspace { grid-template-columns:minmax(0,1fr) 300px; gap:16px; } .spec-workspace .form-block { padding:18px; } }
+@media(max-width:800px) { .spec-workspace { grid-template-columns:minmax(0,1fr); } .spec-summary { position:static; } }
+@media(max-width:520px) { .spec-position-head { flex-direction:column; } .spec-position-price { text-align:left; max-width:100%; } .spec-position-details tr { grid-template-columns:minmax(0,1fr); } }

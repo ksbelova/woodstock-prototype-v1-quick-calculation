@@ -14,6 +14,7 @@
   let records=[],otherRecords=[],order={},busy=false,editorIndex=null,editorController=null,engineWindow=null,pendingEditor=null,editingRow=0;
   const requestedType=new URLSearchParams(location.search).get('product')||sessionStorage.getItem('woodstockSpecificationProduct');
   let productType=requestedType==='flooring'?'flooring':'plate';
+  const expandedCards=new Set();
   let restoringFocus=false,sourceRegistry=new Map(),editorOriginalRecords=null;
   const pendingChanges=new Set();
   const serviceNames={delivery:'Доставка',installation:'Монтаж',measurement:'Замер',design:'Конструкторские услуги',other:'Другое'};
@@ -258,7 +259,22 @@
       tr.lastElementChild.innerHTML=editing?actionButton('save','Сохранить',item.index,item.row)+actionButton('cancel','Отменить',item.index,item.row):actionButton('edit','Редактировать',item.index,item.row)+actionButton('duplicate','Дублировать',item.index,item.row)+actionButton('delete','Удалить',item.index,item.row);
       if(editing)fillEditorRow(tr,item.row);
     });
-    $('productTables').innerHTML=container.innerHTML;
+    const cards=document.createElement('div');
+    const grouped=new Map();
+    rows.forEach((item,i)=>{if(!grouped.has(item.index))grouped.set(item.index,[]);grouped.get(item.index).push(container.querySelectorAll('tbody tr')[i]);});
+    grouped.forEach((trs,index)=>{
+      const record=records[index],key=record?.id||'new';
+      const editing=!!editorController&&index===editorIndex;
+      const card=document.createElement('article');card.className='spec-position';
+      const sizeText=record?.productType==='plate'?(record.sizes||[]).map(row=>n(row.length)+' × '+n(row.width)+' мм · '+n(row.quantity)+' шт.').join('; '):record?n(record.length)+' × '+n(record.width)+' мм · '+n(record.areaWithWaste)+' м²':'';
+      card.innerHTML='<div class="spec-position-head"><div><p class="kicker">Изделие '+(index===null?records.length+1:index+1)+'</p><h3>'+esc(record?.title||record?.species||'Новая позиция')+'</h3><p class="field__note">'+esc(sizeText)+'</p></div><div class="spec-position-price"><span class="field__note">'+(record?(inProduction(record)?'Материалы отдельно':partial(record)?'Рассчитанная часть':'Стоимость с НДС'):'')+'</span><strong>'+money(record?known(record):null)+'</strong></div></div>';
+      const details=document.createElement('details');details.className='spec-position-details';details.dataset.cardKey=key;details.open=editing||expandedCards.has(key);
+      details.innerHTML='<summary>Характеристики и деталировка</summary>';
+      const wrap=document.createElement('div');wrap.innerHTML=table(headers,[]);
+      const tbody=wrap.querySelector('tbody');trs.forEach(tr=>{Array.from(tr.cells).forEach((td,i)=>td.dataset.label=headers[i]);tr.classList.toggle('spec-editing-row',tr.hasAttribute('data-edit-group'));tbody.append(tr);});
+      details.append(wrap);card.append(details);cards.append(card);
+    });
+    $('productTables').innerHTML=cards.innerHTML;
     // cloneNode/innerHTML do not retain current values or FileLists; synchronize from the source controls.
     syncProxyValues();
     const notes=records.flatMap((record,index)=>[...effectiveWarnings(record).map(note=>'Изделие '+(index+1)+': '+note),...(record.specification?.unallocatedCost?['Изделие '+(index+1)+': общие рассчитанные затраты '+money(record.specification.unallocatedCost)+' уже включены в итог и не распределены по строкам.']:[])]);
@@ -273,7 +289,7 @@
     const result=totals();$('totalLabel').textContent=result.partial?'Стоимость рассчитанной части с НДС':'Итого с НДС';$('orderTotal').textContent=money(result.total);$('orderVat').textContent='В том числе НДС: '+money(result.vat);
     $('orderBreakdown').innerHTML=table(['Состав заказа','Стоимость с НДС'],records.map((record,index)=>['Изделие '+(index+1)+' · '+(record.title||record.species)+(inProduction(record)?' · материалы отдельно':'')+(partial(record)?' (рассчитанная часть)':''),money(known(record))]).concat(quoteState().scope.length?[["Общая стоимость производства для клиента",money(quoteState().clientCost)]]:[]));
     let managerDetails=$('managerCalculationDetails');
-    if(!managerDetails){managerDetails=document.createElement('details');managerDetails.id='managerCalculationDetails';$('orderBreakdown').after(managerDetails);}
+    if(!managerDetails){managerDetails=document.createElement('details');managerDetails.id='managerCalculationDetails';$('downloadStatus').after(managerDetails);}
     managerDetails.innerHTML='<summary>Внутренняя детализация расчёта · для менеджера</summary><p>Не включается в клиентскую спецификацию. Работы, входящие в цену панели или производства, отдельно не начисляются.</p>'+records.filter(record=>record.productType==='plate').map((record,index)=>'<h3>Изделие '+(index+1)+'</h3>'+table(['Составляющая','Расчёт','Стоимость с НДС'],(record.specification?.breakdown||[]).map(item=>[item.label,item.note||'',breakdownValue(record,item)]))).join('');
 
     $('partialNote').classList.toggle('is-hidden',!result.partial);$('partialNote').textContent='Расчёт неполный. Учтены только известные составляющие. Стоимость нерассчитанных составляющих'+(selected.length?', выбранных услуг и упаковки':'')+' уточняется. Полную стоимость подтвердит менеджер.';
@@ -663,6 +679,10 @@
     context:()=>State.clone(records.filter(record=>record.id!==pendingEditor?.record?.id)),
     buildPdf,totals,quoteState,edgeDiscount,records:()=>State.clone(records)
   };
+  document.addEventListener('toggle',event=>{
+    const node=event.target;if(!node.matches?.('[data-card-key]'))return;
+    if(node.open)expandedCards.add(node.dataset.cardKey);else expandedCards.delete(node.dataset.cardKey);
+  },true);
   document.addEventListener('change',event=>{
     const node=event.target.closest('[data-production-scope]');if(!node)return;
     const ids=new Set(order.productionScopeIds||[]);if(node.checked)ids.add(node.dataset.productionScope);else ids.delete(node.dataset.productionScope);
@@ -691,7 +711,7 @@
   $('downloadSpecification').addEventListener('click',()=>{
     const output=$('downloadStatus');output.textContent='';
     if(editorController||busy){output.textContent='Сначала сохраните или отмените изменения позиции.';return;}
-    saveOrder();const error=validateOrder();if(error){output.textContent=error;return;}
+    saveOrder();const error=validateOrder();if(error){output.textContent=error;const contacts=$('managerNameInput').closest('details');if(contacts)contacts.open=true;return;}
     try{Common.downloadDocument(buildPdf(),'woodstock-specification.pdf',output);}catch(error){output.textContent='Не удалось сформировать PDF: '+error.message;}
   });
   try{
