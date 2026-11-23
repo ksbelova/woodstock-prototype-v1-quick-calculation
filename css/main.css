@@ -2012,32 +2012,89 @@ input[type="file"]::file-selector-button:hover {
   margin-bottom: 20px;
 }
 
-/* Detailed order: cards, administration accordions and persistent financial summary. */
-.spec-workspace { display:grid; grid-template-columns:minmax(0,1fr) 350px; gap:24px; align-items:start; }
+/* Detailed order: the existing form styles with compact product cards. */
+.specification-page { gap:28px; }
+.specification-page .calc-head h1 { max-width:none; font-size:clamp(36px,4.2vw,58px); margin-bottom:16px; }
+.specification-page .calc-head .lead { font-size:18px; }
+.specification-page .calc-head { margin-bottom:12px; }
+.spec-workspace { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:24px; align-items:start; }
 .spec-main { min-width:0; display:grid; gap:20px; }
-.spec-summary { position:sticky; top:24px; min-width:0; }
-.spec-position { border:1px solid var(--line); border-radius:18px; margin-top:18px; overflow:hidden; }
-.spec-position-head { display:flex; justify-content:space-between; align-items:start; gap:20px; padding:20px; }
+.spec-main > .form-block { padding:24px; }
+.spec-summary { position:sticky; top:20px; min-width:0; }
+.spec-summary > .form-block { padding:22px; }
+.spec-actions { display:flex; justify-content:flex-end; align-items:start; }
+.spec-position { border:1px solid var(--line); border-radius:18px; margin-top:16px; overflow:hidden; }
+.spec-position-head { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:16px; padding:20px; }
 .spec-position-head h3 { font-size:19px; font-weight:500; margin:8px 0; }
-.spec-position-price { display:grid; gap:8px; text-align:right; flex-shrink:0; max-width:45%; }
-.spec-position-price strong { font-size:21px; font-weight:500; }
-.spec-position-details > summary, .spec-admin > summary { cursor:pointer; padding:16px 20px; font-weight:500; }
+.spec-position-head .kicker { margin:0; }
+.spec-position-head .field__note { margin:0; }
+.spec-position-price { display:grid; align-content:start; gap:8px; text-align:right; max-width:230px; }
+.spec-position-price strong { font-size:22px; font-weight:500; }
+.spec-position-details > summary, .spec-admin > summary { cursor:pointer; padding:14px 20px; font-size:14px; font-weight:500; }
 .spec-position-details[open] > summary { border-bottom:1px solid var(--line); }
+.spec-position-details > div { padding:4px 20px 20px; }
 .spec-admin { border:1px solid var(--line); border-radius:16px; margin-top:12px; }
-.spec-admin-body { padding:20px; }
-.spec-position-details > div { padding:0 16px; }
-.spec-position-details table thead { display:none; }
-.spec-position-details table, .spec-position-details tbody { display:block; }
-.spec-position-details tr { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); border-bottom:1px solid var(--line); padding:12px 0; }
-.specification-page .spec-position-details td { display:block; border:0; min-width:0; overflow-wrap:anywhere; }
-.spec-position-details td::before { content:attr(data-label); display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
-.spec-position-details td:first-child, .spec-position-details td:last-child { grid-column:1/-1; }
-.specification-page .spec-position-details td:last-child button { display:inline-block; margin:4px; }
-.spec-summary .spec-table-wrap { overflow-wrap:anywhere; }
-.specification-page .spec-summary th, .specification-page .spec-summary td { min-width:0; padding:8px; }
-.spec-summary .next-step-button { width:100%; }
-.spec-summary #managerCalculationDetails { margin-top:16px; }
-.spec-summary #managerCalculationDetails summary { cursor:pointer; }
-@media(max-width:1050px) { .spec-workspace { grid-template-columns:minmax(0,1fr) 300px; gap:16px; } .spec-workspace .form-block { padding:18px; } }
-@media(max-width:800px) { .spec-workspace { grid-template-columns:minmax(0,1fr); } .spec-summary { position:static; } }
-@media(max-width:520px) { .spec-position-head { flex-direction:column; } .spec-position-price { text-align:left; max-width:100%; } .spec-position-details tr { grid-template-columns:minmax(0,1fr); } }
+.spec-admin-body { padding:18px; }
+.specification-page .spec-parameters { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 24px; margin:16px 0; }
+.spec-parameters > div { min-width:0; }
+.spec-parameters dt { font-size:12px; line-height:1.5; color:var(--muted); margin-bottom:4px; }
+.spec-parameters dd { margin:0; white-space:pre-line; font-size:14px; line-height:1.55; overflow-wrap:anywhere; }
+.spec-size { padding-top:16px; border-top:1px solid var(--line); margin-top:16px; }
+.spec-size-head { display:flex; align-items:start; gap:16px; justify-content:space-between; }
+.spec-size-head h4 { font-size:15px; line-height:1.5; font-weight:500; margin:0; }
+.spec-size-head p { font-size:13px; color:var(--muted); margin:6px 0 0; }
+.spec-size-price { max-width:45%; font-size:14px; text-align:right; }
+.spec-row-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; }
+.spec-row-actions .secondary-button { padding:9px 12px; font-size:12px; }
+.specification-page .spec-size .spec-parameters { gap:12px 24px; }
+.specification-page .spec-size .spec-parameters dd { font-size:13px; }
+.specification-page .spec-editor table thead, .specification-page .spec-edge-editor thead { display:none; }
+.specification-page .spec-editor table, .specification-page .spec-editor tbody, .specification-page .spec-edge-editor table, .specification-page .spec-edge-editor tbody { display:block; }
+.spec-editor tr, .spec-edge-editor tr { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); border-bottom:1px solid var(--line); padding:12px 0; }
+.specification-page .spec-editor td, .specification-page .spec-edge-editor td { display:block; border:0; min-width:0; white-space:pre-line; overflow-wrap:anywhere; }
+.spec-editor td::before, .spec-edge-editor td::before { content:attr(data-label); display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+.spec-editor td:first-child, .spec-editor td:last-child, .spec-edge-editor td:last-child { grid-column:1/-1; }
+.specification-page .spec-editor td:last-child button, .specification-page .spec-edge-editor td:last-child button { display:inline-block; margin:4px; }
+.spec-editor .field__label { font-size:13px; }
+.specification-page .spec-money-line { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; padding:14px 0; border-bottom:1px solid var(--line); font-size:13px; line-height:1.5; }
+.spec-money-line strong { font-weight:500; text-align:right; }
+.spec-money-line small { display:block; color:var(--muted); line-height:1.4; margin-top:4px; }
+.spec-summary .total-box { margin-top:18px; padding-top:16px; }
+.spec-summary .total-box strong { font-size:32px; overflow-wrap:anywhere; }
+.spec-summary #downloadExcel { width:100%; margin:18px 0 10px; }
+.spec-summary .next-step-button { width:100%; margin:0; font-size:13px; padding:14px 10px; }
+.specification-page .spec-request, .spec-edge-card { border-top:1px solid var(--line); padding-top:18px; margin-top:18px; }
+.spec-request h3, .spec-edge-card h3 { font-size:17px; font-weight:500; line-height:1.4; }
+.spec-request .field-warning { margin:14px 0; line-height:1.5; }
+.spec-main #managerCalculationDetails { min-width:0; }
+.spec-main #managerCalculationDetails > summary, .spec-conditions > summary { cursor:pointer; font-size:16px; font-weight:500; }
+.spec-main #managerCalculationDetails > p { font-size:13px; margin:14px 0; }
+@media(max-width:1120px) {
+  .spec-workspace { grid-template-columns:minmax(0,1fr) 300px; gap:18px; }
+  .spec-main > .form-block { padding:20px; }
+  .spec-position-head { grid-template-columns:minmax(0,1fr); }
+  .spec-position-price { text-align:left; max-width:none; }
+  .spec-editor tr, .spec-edge-editor tr { grid-template-columns:minmax(0,1fr); }
+}
+@media(max-width:850px) {
+  .spec-workspace { grid-template-columns:minmax(0,1fr); }
+  .spec-summary { position:static; }
+  .specification-page .calc-head { flex-direction:column; gap:16px; }
+}
+@media(max-width:520px) {
+  .spec-main > .form-block, .spec-summary > .form-block { padding:18px; }
+  .specification-page .spec-parameters { grid-template-columns:minmax(0,1fr); }
+  .spec-position-head { padding:16px; }
+  .spec-position-details > div { padding:0 16px 16px; }
+  .spec-size-head { flex-direction:column; }
+  .spec-size-price { max-width:100%; text-align:left; }
+  .spec-actions { justify-content:flex-start; }
+  .spec-summary .total-box strong { font-size:30px; }
+}
+
+.spec-production-coverage { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; padding:16px 0; }
+.spec-production-coverage h3 { font-size:14px; font-weight:500; margin:0 0 8px; }
+.spec-production-coverage p { font-size:13px; line-height:1.55; margin:0; color:var(--muted); }
+.spec-request-size { border-top:1px solid var(--line); padding-top:12px; margin-top:12px; }
+.spec-request-size h4 { font-size:14px; font-weight:500; margin:0; }
+@media(max-width:520px) { .spec-production-coverage { grid-template-columns:minmax(0,1fr); } }

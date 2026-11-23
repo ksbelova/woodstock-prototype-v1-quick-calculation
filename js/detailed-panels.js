@@ -1075,13 +1075,14 @@
     const variants = active ? veneerVariantsAtThickness(group).filter(item =>
       !["radial", "tangential"].includes(cut) || confirmedPatternTypesForItem(item).includes(cut)
     ) : [];
-    select.closest(".field").classList.toggle("is-hidden", !active);
-    select.required = active;
+    const choiceRequired = active && variants.length > 1;
+    select.closest(".field").classList.toggle("is-hidden", !choiceRequired);
+    select.required = choiceRequired;
     select.replaceChildren(new Option("Выберите позицию прайса (сорт)", ""));
     variants.forEach(item => select.add(new Option(
       `${veneerPricePositionName(item)} — ${Number.isFinite(num(item.prices?.retail)) ? money(num(item.prices.retail)) + "/м²" : "цена по запросу"}`, item.id
     )));
-    select.value = variants.some(item => item.id === previous) ? previous : "";
+    select.value = variants.length === 1 ? variants[0].id : variants.some(item => item.id === previous) ? previous : "";
     const selected = variants.find(item => item.id === select.value) || null;
     if (active) {
       if (which === "A") selectedVeneerA = selected;
