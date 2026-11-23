@@ -2098,3 +2098,5 @@ input[type="file"]::file-selector-button:hover {
 .spec-request-size { border-top:1px solid var(--line); padding-top:12px; margin-top:12px; }
 .spec-request-size h4 { font-size:14px; font-weight:500; margin:0; }
 @media(max-width:520px) { .spec-production-coverage { grid-template-columns:minmax(0,1fr); } }
+
+.specification-page #pageStatus:empty, .specification-page #downloadStatus:empty { display:none; }

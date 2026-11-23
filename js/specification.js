@@ -91,7 +91,7 @@
   }
   function renderProduction(){
     const section=$('productionSection');if(!section)return;
-    section.classList.toggle('is-hidden',productType!=='plate'||!records.length);
+    section.classList.toggle('is-hidden',productType!=='plate'||!records.some(productionEligible));
     if(productType!=='plate')return;
     const state=quoteState();
     renderRequest();
@@ -103,7 +103,7 @@
     $('confirmProduction').disabled=!!editorController||busy||!state.scope.length;
     $('productionInputs').classList.toggle('is-hidden',!state.scope.length);
     $('productionSummary').classList.toggle('is-hidden',!state.scope.length);
-    if(!state.scope.length)$('productionScope').insertAdjacentHTML('beforeend','<p class="field__note">Стоимость изделий рассчитана автоматически. Отметьте изделие, если для него нужен общий запрос производства.</p>');
+
   }
   function edgeEntries(){
     return records.flatMap(record=>{
@@ -243,7 +243,7 @@
     const shown=record.productType==='flooring'
       ? /^(Нижний слой|Верхний слой|Толщина|Порода дерева|Наименование|Тип шпона|Тип рисунка|Сортировка|Ширина|Длина|Наличие фаски|Тип соединения|Раскладка|Угол торцевого реза|Описание раскладки|Файлы индивидуальной раскладки|Итого к расчёту|Площадь помещения|Запас на укладку|Финишное покрытие|Степень блеска|Цена за м² с НДС)$/
       : /^(Тип шпона|Толщина|Тип рисунка|Раскладка|Основа|Толщина основы|Фанерованные стороны|Сторона А|Лицевая сторона|Тип шпона стороны А|Тип шпона лицевой стороны|Толщина шпона стороны А|Толщина шпона лицевой стороны|Тип рисунка стороны А|Тип рисунка лицевой стороны|Раскладка А|Раскладка Б|Сторона Б|Обратная сторона|Материал стороны Б|Материал обратной стороны|Порода на обратной стороне|Тип шпона стороны Б|Тип шпона обратной стороны|Толщина материала стороны Б|Толщина материала обратной стороны|Тип рисунка стороны Б|Тип рисунка обратной стороны|Шлифовка|Финишное покрытие|Кромка|Стороны кромления|Ширина кромки|Толщина кромки|Калибровка|Чистовой припил|Проклейка основы|Фаска на кромке)$/;
-    return join(details.filter(([key])=>!shown.test(key)&&!/^Геометрический метраж кромки|^Расход кромки|^Метраж к заказу|^Расчётный метраж кромки|^Кромка · Позиция/.test(key)).filter(([key])=>!/^Финиш · Позиция/.test(key)||Number(key.match(/Позиция\s+(\d+)/)?.[1])===row?.position).map(([key,value])=>key+': '+value));
+    return join(details.filter(([key,value])=>key!=='Позиция прайса (сорт)'||![record.veneerA,record.sideB,record.materialSides?.A?.name,record.materialSides?.B?.name].includes(value)).filter(([key])=>!shown.test(key)&&!/^Геометрический метраж кромки|^Расход кромки|^Метраж к заказу|^Расчётный метраж кромки|^Кромка · Позиция/.test(key)).filter(([key])=>!/^Финиш · Позиция/.test(key)||Number(key.match(/Позиция\s+(\d+)/)?.[1])===row?.position).map(([key,value])=>key+': '+value));
   }
   function actionButton(action,label,index,row) {
     return '<button class="secondary-button" type="button" data-action="'+action+'" data-index="'+index+'" data-row="'+row+'"'+(busy?' disabled':'')+'>'+label+'</button>';
@@ -255,10 +255,10 @@
     const cells=floor?floorCells(record,String(index+1)):panelCells(record,record.sizes[0],String(index+1));
     const characteristics=floor?[
       ['Конструкция и шпон',cells[1]],['Сортировка и рисунок',cells[2]],['Размеры и соединение',cells[3]],['Раскладка',cells[4]],['Площадь и запас',cells[5]],['Покрытие',cells[6]],['Цена за м² с НДС',cells[7]],['Примечания',cells[9]]
-    ]:[['Основа',cells[1]],['Лицевая сторона',material(record.materialSides?.A,record.veneerA)],['Обратная сторона',record.sides===2?material(record.materialSides?.B,record.sideB):record.sideB],['Раскладка и рисунок',cells[3]]];
+    ]:[['Основа',join([record.base,String(record.baseThickness??'—')+' мм',record.calibration?.enabled?'После калибровки: '+n(record.calibration.baseThicknessAfterCalibrationMm)+' мм':''])],['Лицевая сторона',material(record.materialSides?.A,record.veneerA)],['Обратная сторона',record.sides===2?material(record.materialSides?.B,record.sideB):record.sideB],['Раскладка и рисунок',join(['Лицевая: '+(record.layout||'—'),record.sides===2?'Обратная: '+(record.layoutB||'—'):'',record.veneerCut?'Рисунок лицевой стороны: '+record.veneerCut:'',record.sides===2&&record.veneerBCut?'Рисунок обратной стороны: '+record.veneerBCut:''])]];
     const extra=floor?'':record.sizes.map((row,i)=>{
       const values=panelCells(record,row,(index+1)+'.'+(i+1));
-      return '<section class="spec-size"><div class="spec-size-head"><div><h4>Размер '+(index+1)+'.'+(i+1)+' · '+esc(n(row.length)+' × '+n(row.width))+' мм</h4><p>'+esc(n(row.quantity)+' шт. · '+n(row.area)+' м² · '+(row.classificationName||''))+'</p></div><div class="spec-size-price">'+esc(values[8])+'</div></div>'+parameterList([['Обработка',values[5]],['Объём и вес',values[6]],...(!inProduction(record)?[['Цена с НДС',values[7]]]:[]),['Примечания',values[9]]])+'<div class="spec-row-actions">'+actionButton('edit','Редактировать',index,i)+actionButton('duplicate','Дублировать',index,i)+actionButton('delete','Удалить',index,i)+'</div></section>';
+      return '<section class="spec-size"><div class="spec-size-head"><div><h4>Размер '+(index+1)+'.'+(i+1)+' · '+esc(n(row.length)+' × '+n(row.width))+' мм</h4><p>'+esc(n(row.quantity)+' шт. · '+n(row.area)+' м² · '+(row.classificationName||''))+'</p></div><div class="spec-size-price">'+esc(values[8])+'</div></div>'+parameterList([['Обработка',values[5]],['Объём и вес',values[6].split('\n').slice(1).join('\n')],...(!inProduction(record)?[['Цена с НДС',values[7]]]:[]),['Примечания',values[9]]])+'<div class="spec-row-actions">'+actionButton('edit','Редактировать',index,i)+actionButton('duplicate','Дублировать',index,i)+actionButton('delete','Удалить',index,i)+'</div></section>';
     }).join('');
     return parameterList(characteristics)+(floor?'<div class="spec-row-actions">'+actionButton('edit','Редактировать',index,0)+actionButton('duplicate','Дублировать',index,0)+actionButton('delete','Удалить',index,0)+'</div>':extra);
   }
@@ -276,7 +276,7 @@
   }
   function requestParameters(record){
     const edge=effectiveEdge(record)||{};
-    return [['Основа',join([record.base,n(record.baseThickness)+' мм'])],['Лицевая сторона',material(record.materialSides?.A,record.veneerA)],['Обратная сторона',record.sides===2?material(record.materialSides?.B,record.sideB):record.sideB],['Раскладка',join(['Лицевая: '+(record.layout||'—'),'Обратная: '+(record.layoutB||'—'),record.veneerCut?'Рисунок: '+record.veneerCut:''])],['Обработка',join([record.sanding?'Шлифовка':'',record.finish,record.calibration?.enabled?'Калибровка: '+n(record.calibration.baseThicknessAfterCalibrationMm)+' мм':''])],['Отдельно от суммы производства',join(materialParts(record).map(item=>item.label))],['Облицовка кромкой',edge.mode==='attached'?join([edge.typeName,edge.displayName||edge.veneerName||edge.name,n(edge.thicknessMm)+' × '+n(edge.widthMm)+' мм']):'Не требуется'],['Комментарий',record.comment],['Файлы',record.files?.map(file=>file.name||file).join(', ')],['Требования к раскладке',record.layoutTzComment],['Файлы к раскладке',record.layoutTzFiles?.join(', ')]];
+    return [['Основа',join([record.base,String(record.baseThickness??'—')+' мм'])],['Лицевая сторона',material(record.materialSides?.A,record.veneerA)],['Обратная сторона',record.sides===2?material(record.materialSides?.B,record.sideB):record.sideB],['Раскладка',join(['Лицевая: '+(record.layout||'—'),record.sides===2?'Обратная: '+(record.layoutB||'—'):'',record.veneerCut?'Рисунок: '+record.veneerCut:''])],['Обработка',join(['Шлифовка: '+(record.sanding?'да':'нет'),'Покрытие: '+(record.finish||'Не требуется'),record.calibration?.enabled?'Калибровка: '+n(record.calibration.baseThicknessAfterCalibrationMm)+' мм':''])],['Отдельно от суммы производства',join(materialParts(record).map(item=>item.label))],['Облицовка кромкой',edge.mode==='attached'?join([edge.typeName,edge.displayName||edge.veneerName||edge.name,n(edge.thicknessMm)+' × '+n(edge.widthMm)+' мм']):'Не требуется'],['Комментарий',record.comment],['Файлы',record.files?.map(file=>file.name||file).join(', ')],['Требования к раскладке',record.layoutTzComment],['Файлы к раскладке',record.layoutTzFiles?.join(', ')]];
   }
   function requestSizeRows(record){return (record.sizes||[]).map((row,i)=>{
     const edge=effectiveEdge(record),position=edge?.positionSettings?.find(item=>item.position===row.position);
