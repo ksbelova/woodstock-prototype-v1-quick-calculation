@@ -2100,3 +2100,74 @@ input[type="file"]::file-selector-button:hover {
 @media(max-width:520px) { .spec-production-coverage { grid-template-columns:minmax(0,1fr); } }
 
 .specification-page #pageStatus:empty, .specification-page #downloadStatus:empty { display:none; }
+
+/* Variant 1 composition: product and roll cards, visible tools, compact financial lists. */
+.spec-section-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+.spec-section-head h2 { margin:0; }
+.spec-section-head p { margin:6px 0 0; }
+.spec-tag { display:inline-block; width:fit-content; max-width:100%; padding:4px 9px; border:1px solid var(--line); border-radius:24px; background:var(--soft); color:var(--muted); font-size:11px; line-height:1.5; font-weight:400; }
+.spec-tag--warning { background:var(--warning-bg); border-color:var(--warning-line); color:var(--text); }
+.spec-position-meta { display:flex; flex-wrap:wrap; gap:14px 26px; padding:0 20px; }
+.spec-position-meta > div { display:grid; gap:4px; }
+.spec-position-meta span { color:var(--muted); font-size:12px; }
+.spec-position-meta strong { font-size:14px; font-weight:500; }
+.spec-position-tools { display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:18px 20px; }
+.spec-position-tools > button { padding:9px 12px; font-size:12px; }
+.spec-position-tools > button:first-child { margin-right:auto; background:var(--soft); }
+.spec-position-details > summary { display:none; }
+.spec-position-details[open] { border-top:1px solid var(--line); }
+.spec-position-details .spec-parameters > div { padding-bottom:10px; border-bottom:1px solid var(--soft); }
+.spec-position-price .spec-tag { justify-self:end; }
+.spec-position-price small { font-size:11px; color:var(--muted); max-width:205px; }
+.spec-dimension { display:grid; grid-template-columns:40px minmax(0,1fr) auto auto; align-items:center; gap:12px; font-size:13px; padding:8px 0; }
+.spec-dimension strong { font-weight:500; }
+.spec-scope-options { margin:14px 0; }
+.spec-scope-options > summary { cursor:pointer; font-size:13px; color:var(--muted); }
+.spec-scope-options .toggle-line { font-size:13px; }
+.spec-scope-card { border:1px solid var(--line); border-radius:14px; background:var(--soft); padding:16px; margin:12px 0; }
+.spec-scope-card h3 { margin:0 0 7px; font-size:15px; font-weight:500; }
+.spec-scope-card p { font-size:12px; line-height:1.5; margin:5px 0; }
+.spec-scope-card details { margin-top:10px; }
+.spec-scope-card summary { cursor:pointer; font-size:12px; }
+.spec-scope-card .spec-parameters dd { font-size:12px; }
+.spec-admin > summary { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:7px 14px; }
+.spec-admin > summary strong { font-size:15px; font-weight:500; }
+.spec-admin > summary small { grid-row:2; color:var(--muted); font-size:12px; font-weight:400; }
+.spec-admin > summary > span { grid-column:2; grid-row:1/3; padding:6px 10px; border:1px solid var(--line); border-radius:8px; font-size:11px; font-weight:400; }
+.spec-summary .total-box { margin-top:0; padding:0 0 14px; border-top:0; }
+.spec-summary .spec-money-line { grid-template-columns:minmax(0,1fr) minmax(80px,auto); padding:11px 0; font-size:12px; }
+.spec-summary .spec-money-line strong { overflow-wrap:anywhere; }
+.spec-final-status { display:grid; gap:6px; padding:16px 0 0; }
+.spec-final-status span { font-size:12px; color:var(--muted); }
+.spec-final-status strong { font-size:22px; font-weight:500; }
+.spec-manager { margin-top:18px; }
+.spec-manager > summary { font-size:12px; cursor:pointer; color:var(--muted); }
+.spec-manager h3 { font-size:13px; font-weight:500; margin:18px 0 6px; }
+.spec-manager .spec-conditions { padding:0; border:0; border-radius:0; background:none; margin-top:18px; }
+.spec-manager .spec-conditions > summary { font-size:12px; }
+.spec-manager .spec-money-line { font-size:11px; }
+.spec-manager .spec-money-line small { white-space:pre-line; }
+#productionSummary { margin:18px 0; }
+#productionSummary .spec-money-line:last-child { padding:16px 0; }
+#productionSummary .spec-money-line:last-child strong { font-size:22px; }
+@media(max-width:1120px) { .spec-position-price .spec-tag { justify-self:start; } }
+@media(max-width:520px) {
+  .spec-position-meta { padding:0 16px; }
+  .spec-position-tools { padding:16px; }
+  .spec-position-tools > button:first-child { width:100%; margin:0; }
+  .spec-dimension { grid-template-columns:30px minmax(0,1fr); }
+  .spec-admin > summary { grid-template-columns:minmax(0,1fr); }
+  .spec-admin > summary > span { grid-column:1; grid-row:3; width:fit-content; }
+}
+.spec-summary .total-box { margin-top:0; padding-top:0; border-top:0; }
+.spec-summary .spec-money-line strong { overflow-wrap:anywhere; }
+.spec-summary .spec-manager { margin-top:16px; border-top:1px solid var(--line); padding-top:14px; }
+.spec-summary .spec-manager > summary { cursor:pointer; font-size:13px; font-weight:500; }
+.spec-summary .spec-manager h3 { font-size:14px; font-weight:500; margin:16px 0 4px; }
+.spec-summary .spec-manager .field__note { font-size:12px; }
+.spec-summary .spec-manager .spec-money-line { font-size:12px; }
+.spec-summary .spec-manager #conditionsSection { border:0; padding:0; margin-top:16px; border-radius:0; }
+.spec-summary .spec-manager #conditionsSection > summary { font-size:13px; }
+.spec-final-status { padding:16px 0; display:grid; gap:7px; border-bottom:1px solid var(--line); }
+.spec-final-status span { font-size:12px; color:var(--muted); }
+.spec-final-status strong { font-size:22px; font-weight:500; }
