@@ -81,13 +81,13 @@
       {
         "minThicknessMm": 8,
         "maxThicknessMm": 19,
-        "maxLengthMm": 2780,
+        "maxLengthMm": 3100,
         "maxWidthMm": 2050
       },
       {
         "minThicknessMm": 20,
         "maxThicknessMm": 50,
-        "maxLengthMm": 2780,
+        "maxLengthMm": 3100,
         "maxWidthMm": 1280
       }
     ],
@@ -170,7 +170,9 @@
         10
       ],
       "lengthJoiningColumn": "L: not imported as an edge material or edging service"
-    }
+    },
+    "productionMarkupPercent": 50,
+    "productionMarkupNote": "На себестоимость основы с работой и производственных операций начисляется 50%. Прайсовые складские изделия, шпон и материалы кромки повторно не умножаются; общая сумма производства обрабатывается в спецификации."
   },
   "bases": [
     {
@@ -288,7 +290,6 @@
       "6+6",
       16,
       18,
-      "6+6+6",
       19,
       22,
       24,
@@ -47337,28 +47338,6 @@
           "length": 2800,
           "width": 2070
         }
-      ],
-      "6+6+6": [
-        {
-          "length": 2800,
-          "width": 686
-        },
-        {
-          "length": 2800,
-          "width": 1032
-        },
-        {
-          "length": 2800,
-          "width": 1220
-        },
-        {
-          "length": 2800,
-          "width": 2070
-        },
-        {
-          "length": 3050,
-          "width": 1220
-        }
       ]
     },
     "plywood_light": {
@@ -48181,24 +48160,6 @@
       "sides": 2,
       "veneerThicknessClass": "1.5+",
       "ratePerM2": 3556.3
-    },
-    {
-      "baseId": "mdf",
-      "thickness": "6+6+6",
-      "sides": 1,
-      "veneerThicknessClass": "0.6",
-      "ratePerM2": 1692.6,
-      "source": "Расчет_стандартных_панелей_от_07_11_2025.xlsx",
-      "sourceNote": "Ставка стандарта из расчёта 07.11.2025; в таблице 2026 года замены для 6+6+6 нет"
-    },
-    {
-      "baseId": "mdf",
-      "thickness": "6+6+6",
-      "sides": 2,
-      "veneerThicknessClass": "0.6",
-      "ratePerM2": 2546.7,
-      "source": "Расчет_стандартных_панелей_от_07_11_2025.xlsx",
-      "sourceNote": "Ставка стандарта из расчёта 07.11.2025; в таблице 2026 года замены для 6+6+6 нет"
     }
   ],
   "warehouseFormatsByThickness": {
@@ -48663,8 +48624,7 @@
       "16+3+16": "automatic",
       "18+3+18": "automatic",
       "16+6+16": "automatic",
-      "16+8+16": "automatic",
-      "6+6+6": "production"
+      "16+8+16": "automatic"
     },
     "dsp": {
       "16": "automatic",
@@ -48724,11 +48684,6 @@
   },
   "baseThicknessScenarioPriceModes": {
     "mdf": {
-      "6+6+6": {
-        "standard": "automatic",
-        "exact": "production",
-        "allowance20": "production"
-      },
       "24": {
         "standard": "production",
         "exact": "automatic",

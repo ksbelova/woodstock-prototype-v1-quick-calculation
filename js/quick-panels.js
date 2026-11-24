@@ -187,8 +187,8 @@
   }
   if(wall&&$('quickFinishExplanation')) {
    const descriptions={
-    lacquer_acrylic:'Прозрачное покрытие на водной основе, сохраняет рисунок и цвет шпона, подходит для стен и мебели без высокой нагрузки.',
-    lacquer_polyurethane:'Прозрачное покрытие повышенной прочности, лучше переносит частые прикосновения и влажную уборку, подходит для коридоров, холлов и общественных помещений.',
+    lacquer_acrylic:'Прозрачное покрытие, сохраняет рисунок шпона.',
+    lacquer_polyurethane:'Прозрачное покрытие, сохраняет рисунок шпона.',
     enamel:'Непрозрачное цветное покрытие, перекрывает рисунок шпона, но сохраняет его фактуру.'
    };
    const text=descriptions[form.finishSelect.value]||'';
@@ -197,7 +197,7 @@
   }
   if(wall||scenario==='details'){ $('quickToningField')?.remove(); $('quickPatternTransition')?.closest('label')?.remove(); }
   // The short scenario selects the documented finish process, then the existing controller prices it.
-  const process=form.finishSelect.value==='lacquer_acrylic'&&form.lacquerProcessSelect.value===''?'primer_lacquer':null;
+  const process=['lacquer_acrylic','lacquer_polyurethane'].includes(form.finishSelect.value)&&form.lacquerProcessSelect.value===''?'primer_lacquer':null;
   if(process&&[...form.lacquerProcessSelect.options].some(o=>o.value===process)){
    syncing=true;form.lacquerProcessSelect.value=process;api.recalculate();syncing=false;result=api.result();
   }
@@ -240,6 +240,9 @@
    `${row.length} × ${row.width}`,String(row.quantity),number(row.area),
    `${value(row.knownPricePerPiece)} / шт.\n${value(row.knownPricePerM2)} / м²`,value(row.knownSubtotal)
   ];});
+  if(edge.mode==='separate')rows.push([
+   String(rows.length+1),'Кромка в рулоне',edgeText,'Поставляется отдельно','—',number(edge.orderedMeters??edge.meters)+' пог. м','—',money(edge.pricePerRunningM)+' / пог. м',money(edge.materialCost)
+  ]);
   const partial=!result.priceCalculationComplete||$('boringSelect')?.value==='yes';
   const notes=[{text:preliminaryDisclaimer,style:'infoSmall',margin:[0,4,0,8]}];
   const rowPartial=record.sizes.some(row=>row.pricingPartial)||boring;
@@ -251,7 +254,7 @@
   const files=[...new Set([...contact.fileNames(),...(record.layoutTzFiles||[]),...record.sizes.flatMap(row=>row.files||[])])];
   if(record.layoutTzComment)notes.push({text:'Требования к раскладке: '+record.layoutTzComment,style:'infoText'});
   notes.push({text:'Дополнительные требования',style:'sectionTitle'},{text:record.comment||'—',style:'infoText'},{text:'Файлы: '+(files.join(', ')||'нет'),style:'infoSmall'},{text:'Связь с менеджером: '+($('managerContactInput').checked?'нужна':'не запрошена'),style:'infoSmall'});
-  return {dontBreakRows:false,title,numberPrefix:'КР-ПЛ-',subtitle:'Краткий расчёт плит',preliminaryPriceLabels:true,widths:[12,52,110,103,57,24,38,65,65],header:['№','Основа','Шпон','Раскладка и обработка','Размер, мм','Шт.','Площадь, м²','Цена с НДС','Сумма с НДС'].map(text=>({text,style:'tableHeader'})),rows,afterPrice:notes};
+  return {dontBreakRows:false,title,numberPrefix:'КР-ПЛ-',subtitle:'Краткий расчёт плит',preliminaryPriceLabels:true,widths:[12,52,110,103,57,24,38,65,65],header:['№','Основа','Шпон','Раскладка и обработка','Размер, мм','Кол-во','Площадь, м²','Цена с НДС','Сумма с НДС'].map(text=>({text,style:'tableHeader'})),rows,afterPrice:notes};
  }
  // Standard sizes are tied to the chosen base. A cleared base must not retain a previously selected format.
  function clearBaseDependentStandardSizes(){

@@ -48,7 +48,7 @@
   function partial(record){if(record.sizes?.some(row=>row.productionFitStatus==='unconfirmed'))return true;if(inProduction(record))return !quoteState().valid||!materialsComplete(record);if(editorController&&editorIndex!==null&&records[editorIndex]?.id===record.id){const live=editorController.result?.();return !live||(productType==='plate'?!live.priceCalculationComplete:!Number.isFinite(live.total));}return record.pricingPartial===true||!Number.isFinite(record.total);}
     // Production quote belongs to the order and is never allocated to individual rows.
   const productionReason = reason => /^(Стоимость производства|Основа и производственные операции|Работа с толстым шпоном|Операция кромления:|Калибровка:|Фаска:|Финишное покрытие)/.test(reason);
-  const productionEligible = record => record.productType==='plate' && !record.sizes?.some(row=>row.classificationId==='warehouse_standard');
+  const productionEligible = record => record.productType==='plate';
   const productionRequired = record => productionEligible(record) && (record.productionCosts?.some(q=>q.required)||record.requiresProductionCost);
   function productionScope(){
     const selected=new Set(order.productionScopeIds||[]);
@@ -75,7 +75,7 @@
   }
   function quoteSignature(){
     // Include the complete production request. Descriptive order/contact edits do not affect it.
-    return JSON.stringify(productionScope().map(record=>({id:record.id,base:record.baseId,thickness:record.baseThickness,
+    return JSON.stringify(productionScope().map(record=>({id:record.id,pricingRevision:record.pricingRevision,base:record.baseId,thickness:record.baseThickness,
       sides:record.sides,materials:record.materialSides,layout:record.layoutId,layoutB:record.layoutBId,
       sanding:record.sanding,calibration:record.calibration,finish:record.finishParameters,finishByPosition:record.finishByPosition,
       sizes:record.sizes.map(row=>({length:row.length,width:row.width,quantity:row.quantity,manufacturing:row.manufacturingType,transition:row.transition,comment:row.comment,files:row.files})),
@@ -333,7 +333,7 @@
       const isFloor=record?.productType==='flooring',quantity=record?(isFloor?n(record.areaWithWaste)+' м²':n(record.sizes.reduce((sum,row)=>sum+Number(row.quantity||0),0))+' шт.'):'—';
       const area=record?(isFloor?record.areaWithWaste:record.sizes.reduce((sum,row)=>sum+Number(row.area||0),0)):null;
       const kind=isFloor?'Инженерная доска':record?.sizes.length>1?'Плитные изделия · несколько размеров':record?.sizes[0]?.manufacturingType==='standard'?'Стандартная панель':record?.sizes[0]?.manufacturingType==='allowance20'?'Полуфабрикат':'Плитное изделие';
-      const source=record?(inProduction(record)?'Цена производства':partial(record)?'Неполный расчёт':'Автоматическая цена'):'';
+      const source=record?(inProduction(record)?'Материалы отдельно':partial(record)?'Неполный расчёт':'Автоматическая цена'):'';
       card.innerHTML='<div class="spec-position-head"><div><p class="kicker">Изделие '+(index===null?records.length+1:index+1)+' · '+esc(kind)+'</p><h3>'+esc([record?.title,record?.veneerA||record?.species].filter(Boolean).join(' · ')||'Новая позиция')+'</h3><p class="field__note">'+esc(sizeText)+'</p></div><div class="spec-position-price"><span class="spec-tag '+(record&&inProduction(record)?'spec-tag--warning':'')+'">'+esc(source)+'</span><strong>'+money(record?productDisplayCost(record):null)+'</strong>'+(record&&inProduction(record)?'<small>Материалы изделия; производство ниже</small>':'')+'</div></div><div class="spec-position-meta"><div><span>Площадь</span><strong>'+n(area)+' м²</strong></div><div><span>Количество</span><strong>'+esc(quantity)+'</strong></div>'+(!isFloor&&record?.sizes.length>1?'<div><span>Деталировка</span><strong>'+record.sizes.map((_,i)=>(index+1)+'.'+(i+1)).join(' + ')+'</strong></div>':'')+'</div>';
       const tools=document.createElement('div');tools.className='spec-position-tools';
       tools.innerHTML='<button type="button" class="secondary-button" data-card-toggle="'+esc(key)+'" aria-expanded="'+(editing||expandedCards.has(key))+'" '+(editing?'disabled':'')+'>'+(expandedCards.has(key)?'Скрыть характеристики':'Все характеристики')+'</button>'+(record&&!editing?productTools(record,index):'');
@@ -695,7 +695,7 @@
   }
 
   async function prepareLegacyRecords(){
-    const indexes=records.map((record,index)=>!record.editorState||!record.specification||(record.productType==='plate'&&record.sizes.some(row=>!Object.hasOwn(row,'knownSubtotal')))?index:null).filter(index=>index!==null);
+    const indexes=records.map((record,index)=>(record.productType==='plate'&&record.pricingRevision!=='20261124-confirmed-answers')||!record.editorState||!record.specification||(record.productType==='plate'&&record.sizes.some(row=>!Object.hasOwn(row,'knownSubtotal')))?index:null).filter(index=>index!==null);
     if(!indexes.length)return;
     busy=true;render();status('Подготовка сохранённых позиций…');
     const next=records.slice(),unresolved=[];
@@ -704,8 +704,8 @@
         try{
           const controller=await loadEngine(productType,records[index]),updated=controller.capture();
           if(updated)next[index]={...records[index],...updated,id:records[index].id,createdAt:records[index].createdAt};
-          else unresolved.push(String(index+1));
-        }catch(error){unresolved.push(String(index+1));}
+          else { next[index]={...records[index],pricingUnavailable:true,pricingPartial:true}; unresolved.push(String(index+1)); }
+        }catch(error){next[index]={...records[index],pricingUnavailable:true,pricingPartial:true};unresolved.push(String(index+1));}
         closeEditor();
       }
       persist(next);

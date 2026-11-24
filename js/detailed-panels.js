@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const DATA_URL = "../../data/panels.json?v=20261112-dsp-calibration-data";
+  const DATA_URL = "../../data/panels.json?v=20261124-confirmed-answers";
   const Core = window.WoodstockPanelsCore;
   // Общая спецификация: инженерная доска уже сохраняется в этот же ключ.
   const SPEC_STORAGE_KEY = "woodstockDetailedSpecification";
@@ -411,8 +411,8 @@
 
   function finishDescription(id) {
     return {
-      lacquer_acrylic: "Лак акриловый. Прозрачное покрытие на водной основе, сохраняет рисунок и цвет шпона, подходит для стен и мебели без высокой нагрузки.",
-      lacquer_polyurethane: "Лак полиуретановый. Прозрачное покрытие повышенной прочности, лучше переносит частые прикосновения и влажную уборку, подходит для коридоров, холлов и общественных помещений.",
+      lacquer_acrylic: "Лак акриловый. Прозрачное покрытие, сохраняет рисунок шпона.",
+      lacquer_polyurethane: "Лак полиуретановый. Прозрачное покрытие, сохраняет рисунок шпона.",
       enamel: "Эмаль. Непрозрачное цветное покрытие, перекрывает рисунок шпона, но сохраняет его фактуру.",
       lacquer_polyester: "Полиэфирный лак. Толстое полированное покрытие с зеркальным блеском, как у рояля."
     }[id] || "";
@@ -430,8 +430,8 @@
     return ["lacquer_acrylic", "lacquer_polyurethane", "lacquer_polyester"].includes(id);
   }
 
-  function isAcrylicLacquer(id) {
-    return id === "lacquer_acrylic";
+  function usesStandardLacquerProcess(id) {
+    return id === "lacquer_acrylic" || id === "lacquer_polyurethane";
   }
 
   function isPolyurethaneLacquer(id) {
@@ -475,13 +475,29 @@
     return document.body.classList.contains("quick-panels-page") && document.body.dataset.panelScenario === "details";
   }
 
+  function reverseMaterialRestricted() {
+    const base = selectedBase();
+    const thickness = parseThicknessComposition(currentBaseThicknessRaw()).total;
+    return !base || (base.id === "mdf" && thickness <= 10) || base.id === "gsp" || base.id === "blockboard" || base.id.startsWith("plywood_");
+  }
+
+  function paperBackAllowed() {
+    return faceMaterialSelectionReady() && !reverseMaterialRestricted() && !requiresTwoFaceSides(selectedVeneerThickness());
+  }
+
+  function roughBackAllowedForFace(thickness) {
+    return Number.isFinite(thickness) && thickness > 0 && selectedMaterialType() !== "ready_shirt";
+  }
+
+  function roughBackCompatible(face, back) {
+    return roughBackAllowedForFace(face) && Number.isFinite(back) && (face >= 2 ? sameConfirmedThickness(face, back) : back <= 1.5 + 0.001);
+  }
+
   function syncDetailedPaperBack() {
     if (!isDetailedPanelCalculation()) return;
     const thickness = selectedVeneerThickness();
     const base = parseThicknessComposition(currentBaseThicknessRaw()).total;
-    const allowed = faceMaterialSelectionReady()
-      && Math.abs(thickness - 0.6) < 0.001
-      && Number.isFinite(base) && base > 0 && base <= 10;
+    const allowed = paperBackAllowed();
     if (!allowed && form.reverseSideSelect.value === "paper") {
       form.reverseSideSelect.value = "rough";
     }
@@ -489,7 +505,7 @@
     if (option) option.disabled = !allowed;
     form.reverseSideHint.textContent = faceMaterialSelectionReady() && !allowed
       && Number(form.veneeredSidesSelect.value) === 1
-      ? "Бумага возможна только при шпоне 0,6 мм и основе до 10 мм. Обратная сторона — черновой шпон."
+      ? "Для выбранной основы или толщины шпона бумага не применяется. Выберите тот же или черновой шпон."
       : "";
   }
 
@@ -500,11 +516,11 @@
     const thickness = selectedVeneerThickness();
     const base = parseThicknessComposition(currentBaseThicknessRaw()).total;
     const faceReady = faceMaterialSelectionReady();
-    const paperAllowed = faceReady && Math.abs(thickness - 0.6) < 0.001 && Number.isFinite(base) && base > 0 && base <= 10;
+    const paperAllowed = paperBackAllowed();
     if (paperAllowed || !faceReady) quickPaperBackResetHint = "";
     if (!paperAllowed && form.reverseSideSelect.value === "paper") {
       form.reverseSideSelect.value = "rough";
-      quickPaperBackResetHint = "Бумага возможна только со шпоном на лицевой стороне толщиной 0,6 мм и основой до 10 мм";
+      quickPaperBackResetHint = "Для выбранной основы или толщины шпона бумага не применяется";
     }
     const paperOption = form.reverseSideSelect.querySelector('option[value="paper"]');
     if (paperOption) {
@@ -591,7 +607,7 @@
   }
 
   function defaultFinishSides() {
-    if (isQuickWallPanel()) return "1 сторона";
+    if (isQuickWallPanel() || selectedVeneerThickness() >= 2) return "1 сторона";
     return Number(form.veneeredSidesSelect?.value) === 2 ? "2 стороны" : "1 сторона";
   }
 
@@ -639,7 +655,7 @@
 
     const finishId = ALLOWED_FINISH_IDS.includes(rawFinishId) ? rawFinishId : "none";
     const lacquer = isLacquerFinish(finishId);
-    const acrylic = isAcrylicLacquer(finishId);
+    const acrylic = usesStandardLacquerProcess(finishId);
     const enamel = finishId === "enamel";
     const sides = finishUsesSides(finishId) ? (isQuickWallPanel() ? "1 сторона" : source.sides || defaultFinishSides()) : "";
 
@@ -685,7 +701,7 @@
       if (!normalized.lacquerGloss) {
         issues.push({ field: "gloss", message: "Выберите степень блеска." });
       }
-      if (isAcrylicLacquer(normalized.finishId) && !normalized.lacquerProcess) {
+      if (usesStandardLacquerProcess(normalized.finishId) && !normalized.lacquerProcess) {
         issues.push({ field: "process", message: "Выберите схему покрытия." });
       }
     }
@@ -709,7 +725,7 @@
     if (normalized.sides) parts.push(normalized.sides);
     if (isLacquerFinish(normalized.finishId)) {
       if (!isGloss100Finish(normalized) && normalized.lacquerGloss) parts.push(`${normalized.lacquerGloss}`);
-      if (isAcrylicLacquer(normalized.finishId) && !isGloss100Finish(normalized)) {
+      if (usesStandardLacquerProcess(normalized.finishId) && !isGloss100Finish(normalized)) {
         const process = data?.finishParameters?.lacquerProcesses?.find((item) => item.id === normalized.lacquerProcess);
         if (process?.name) parts.push(process.name);
       }
@@ -724,13 +740,12 @@
     const normalized = normalizeFinishConfig(config);
     if (normalized.finishId === "none") return { rate: 0, note: "" };
     if (isGloss100Finish(normalized)) return null;
-    if (isAcrylicLacquer(normalized.finishId)) {
+    if (usesStandardLacquerProcess(normalized.finishId) || isPolyurethaneLacquer(normalized.finishId)) {
       const process = data?.finishParameters?.lacquerProcesses?.find((item) => item.id === normalized.lacquerProcess);
       const rate = num(process?.rates?.[normalized.sides]);
       if (!Number.isFinite(rate)) return null;
       return { rate, note: `${process.name} · ${normalized.sides}` };
     }
-    if (isPolyurethaneLacquer(normalized.finishId)) return null;
     if (normalized.finishId === "enamel") {
       const rate = num(data?.finishRates?.enamel?.[normalized.enamelVariant]?.[normalized.sides]);
       if (!Number.isFinite(rate)) return null;
@@ -893,7 +908,7 @@
 
   function selectedRoughBackThickness() {
     const value = num(form.veneerBRoughThicknessSelect?.value);
-    return Number.isFinite(value) && value > 0 && value <= 1.5 + 0.001 ? value : null;
+    return Number.isFinite(value) && value > 0 && value <= Math.max(1.5, selectedVeneerThickness()) + 0.001 ? value : null;
   }
 
   function twoSidedRoughBackSelected() {
@@ -905,24 +920,12 @@
   }
 
   function roughBackThicknessForCurrentSelection() {
-    return twoSidedRoughBackSelected() ? selectedRoughBackThickness() : selectedVeneerThickness();
+    return twoSidedRoughBackSelected() ? selectedRoughBackThickness() : Math.abs(selectedVeneerThickness() - 1) < 0.001 ? 1.5 : selectedVeneerThickness();
   }
 
-  // Временное решение команды для краткого и подробного расчёта:
-  // черновой шпон 1 мм оцениваем по ставке 1,5 мм — 440 руб./м².
-  // Фактическая толщина остаётся 1 мм. Тариф и доплату подтвердить у WOODSTOCK.
-  const ROUGH_BACK_ONE_MM_TEMPORARY_RATE_PER_M2 = 440;
-  function roughBackOneMmTemporaryRateApplies() {
-    return Number(form.veneeredSidesSelect?.value) === 1 &&
-      form.reverseSideSelect?.value === "rough" &&
-      Math.abs(selectedVeneerThickness() - 1) < 0.001;
-  }
   function roughBackRateForThickness(value) {
     const thickness = num(value);
     if (!Number.isFinite(thickness)) return null;
-    if (Math.abs(thickness - 1) < 0.001 && roughBackOneMmTemporaryRateApplies()) {
-      return ROUGH_BACK_ONE_MM_TEMPORARY_RATE_PER_M2;
-    }
     const entry = Object.entries(roughBackRates()).find(([key]) => {
       const keyThickness = num(key);
       return Number.isFinite(keyThickness) && Math.abs(keyThickness - thickness) < 0.001;
@@ -1231,7 +1234,7 @@
       [form.enamelVariantSelect, "enamelSchemeDefinition", enamelSchemeDescription(form.enamelVariantSelect.value)],
       [form.lacquerProcessSelect, "coatingSchemeDefinition", coatingSchemeDescription(form.lacquerProcessSelect.value)],
       [form.calibrationSelect, "calibrationDefinition", "Калибровка основы. Шлифовка основы до точной толщины, чтобы готовая деталь со шпоном получилась нужного размера."],
-      [form.finishSelect, "finishDefinition", "Лак акриловый. Прозрачное покрытие на водной основе, сохраняет рисунок и цвет шпона, подходит для стен и мебели без высокой нагрузки.\nЛак полиуретановый. Прозрачное покрытие повышенной прочности, лучше переносит частые прикосновения и влажную уборку, подходит для коридоров, холлов и общественных помещений.\nЭмаль. Непрозрачное цветное покрытие, перекрывает рисунок шпона, но сохраняет его фактуру."],
+      [form.finishSelect, "finishDefinition", "Лак акриловый. Прозрачное покрытие, сохраняет рисунок шпона.\nЛак полиуретановый. Прозрачное покрытие, сохраняет рисунок шпона.\nЭмаль. Непрозрачное цветное покрытие, перекрывает рисунок шпона, но сохраняет его фактуру."],
       [form.isolatorSelect, "isolatorDefinition", "Изолятор. Защитный слой под лаком. Нужен для пород с маслом или смолой в древесине: без него они проступают сквозь лак пятнами."],
       [form.toningSelect, "toningDefinition", "Тонировка меняет оттенок шпона под нужный цвет и сохраняет его рисунок. Подбираем по образцу, цвет согласуем с вами до запуска производства."]
     ];
@@ -1292,7 +1295,7 @@
       form.veneerBCutField.classList.contains("is-hidden") && form.layoutBField.classList.contains("is-hidden"));
     const hint = el("edgeSideCommentHint");
     if (!hint) return;
-    const ambiguous = new Set(["one_length", "one_width", "one_length_one_width", "two_lengths_one_width", "one_length_two_width"]);
+    const ambiguous = new Set(["one_length", "one_width", "one_length_one_width", "two_lengths_one_width", "one_length_two_widths"]);
     const needsComment = form.edgeModeSelect.value === "attached" &&
       readSizeRows().some(size => {
         const edge = effectiveEdgeForSize(size);
@@ -1385,7 +1388,7 @@
     return [2, 2.5].some(value => Math.abs(thickness - value) < 0.001);
   }
   function backsideCategoryBRequired(item) {
-    return isFaceOnlyExtraVeneer(item) && !quickWallUsesFaceVeneerCompensator();
+    return false; // AA/Extra do not determine the reverse material (Woodstock, 11.11).
   }
 
   function updateVeneerBModeLabel() {
@@ -1780,7 +1783,7 @@
 
   function syncEdgeWidthOptions(which = "attached", { preserve = true } = {}) {
     const controls = edgeControls(which);
-    const automaticAttached = which === "attached" && (isDetailedPanelCalculation() || isQuickDetailsPanel());
+    const automaticAttached = which === "attached" && isQuickDetailsPanel();
     if (automaticAttached) edgeWidthAutomatic.attached = true;
     controls.orderWidthInput.readOnly = automaticAttached;
     if (quickRollWidthIsManual(which)) {
@@ -2490,7 +2493,7 @@
   }
 
   function calibrationRequiredForBase(base = selectedBase()) {
-    if (separatelyPricedCalibration(base)) return false;
+    if (separatelyPricedCalibration(base) || base?.id?.startsWith("plywood_")) return false;
     return calibrationConfigForBase(base)?.required === true;
   }
 
@@ -2572,7 +2575,7 @@
       Number.isFinite(sourceBaseThicknessMm) && sourceBaseThicknessMm > 0 &&
       Number.isFinite(baseThicknessAfterCalibrationMm) && baseThicknessAfterCalibrationMm > 0 &&
       baseThicknessAfterCalibrationMm < sourceBaseThicknessMm &&
-      Number.isFinite(depthMm) && depthMm > 0
+      Number.isFinite(depthMm) && depthMm >= (base?.id === "dsp" ? 1 : Number.EPSILON)
     );
     return {
       enabled,
@@ -2611,7 +2614,7 @@
     }
     form.calibrationSelect.classList.remove("is-hidden");
     if (form.calibrationRequiredNote) form.calibrationRequiredNote.textContent = isDetailedPanelCalculation() && base?.id?.startsWith("plywood_")
-      ? "Калибровка обязательна и входит в общую стоимость от производства."
+      ? "Калибровка выполняется при необходимости и входит в общую стоимость производства. Один размер должен быть не больше 1280 мм."
       : "Калибровка обязательна для выбранной основы.";
     const available = calibrationAvailableForBase(base);
     const required = calibrationRequiredForBase(base);
@@ -2685,7 +2688,7 @@
       form.baseThicknessSelect.disabled = isQuickWallPanel() && base.id === "dsp" && options.length === 1;
     }
 
-    updateBaseProductionCostHint(); updateThicknessWarnings(); updateEdgeUI(); updateCalibrationUI(); renderStandardSizes(); revalidateCustomSizeRows(); recalc();
+    applyVeneerThicknessRules(); updateBaseProductionCostHint(); updateThicknessWarnings(); updateEdgeUI(); updateCalibrationUI(); renderStandardSizes(); revalidateCustomSizeRows(); recalc();
   }
 
   function updateBaseProductionCostHint() {
@@ -2764,7 +2767,7 @@
     const thickness = selectedVeneerThickness();
     const sideAMaterial = selectedVeneerA || selectedVeneerAGroup;
     const readyShirtWithoutThickness = isReadyShirt(sideAMaterial) && !Number.isFinite(thickness);
-    const roughBackAllowed = selectedMaterialType() !== "ready_shirt" && isExactlyOnePointFive(thickness);
+    const roughBackAllowed = roughBackAllowedForFace(thickness);
     form.reverseSideHint.textContent = "";
 
     form.readyShirtThicknessWarning.classList.toggle("is-hidden", !readyShirtWithoutThickness);
@@ -2775,7 +2778,7 @@
 
     const otherOption = form.veneerBModeSelect?.querySelector('option[value="other"]');
     if (otherOption) {
-      otherOption.disabled = readyShirtWithoutThickness;
+      otherOption.disabled = readyShirtWithoutThickness || reverseMaterialRestricted();
       otherOption.textContent = readyShirtWithoutThickness
         ? "Другой материал — нужна подтверждённая толщина"
         : "Другой материал";
@@ -2787,14 +2790,14 @@
     }
     if (!roughBackAllowed && form.veneerBModeSelect.value === "rough") form.veneerBModeSelect.value = "same";
 
-    const roughThicknesses = confirmedRoughBackThicknesses();
+    if (reverseMaterialRestricted() && form.veneerBModeSelect.value === "other") form.veneerBModeSelect.value = "same";
+    const roughThicknesses = thickness >= 2 ? [thickness] : confirmedRoughBackThicknesses();
     const previousRoughThickness = selectedRoughBackThickness();
     if (form.veneerBRoughThicknessSelect) {
       form.veneerBRoughThicknessSelect.innerHTML = '<option value="">Выберите толщину</option>'
         + roughThicknesses.map((value) => `<option value="${esc(value)}">${esc(String(value).replace(".", ","))} мм</option>`).join("");
-      if (Number.isFinite(previousRoughThickness) && roughThicknesses.some((value) => Math.abs(value - previousRoughThickness) < 0.001)) {
-        form.veneerBRoughThicknessSelect.value = String(previousRoughThickness);
-      }
+      const defaultRough = roughThicknesses.includes(previousRoughThickness) ? previousRoughThickness : Math.abs(thickness - 1) < 0.001 ? 1.5 : roughThicknesses.includes(thickness) ? thickness : roughThicknesses[0];
+      form.veneerBRoughThicknessSelect.value = String(defaultRough ?? "");
     }
 
     if (form.veneerBModeHint) form.veneerBModeHint.textContent = "";
@@ -3725,7 +3728,7 @@
         manufacturingType === "exact" && parseThicknessComposition(currentBaseThicknessRaw()).total === 21;
       const productionFitUnconfirmed = isDetailedPanelCalculation() && fitKnown &&
         (finishedSizeApprovalRequired || !productionSourceFormatsForBase().length || !sizeFitsProduction(length, width, productionAllowance));
-      const physicalSizeValid = productionFitUnconfirmed || !needsProductionFitCheck ||
+      const physicalSizeValid = !needsProductionFitCheck ||
         !(length > 0 && width > 0) || sizeFitsProduction(length, width, productionAllowance);
       const size = {
         row,
@@ -4217,7 +4220,7 @@
     const allowed = Array.from(form.edgeThicknessSelect.options).map(option => Number(option.value)).filter(value => value > 0);
     const value = num(state.thicknessMm);
     const thicknessMm = allowed.includes(value) ? value : currentEdgeThickness("attached");
-    return { mode, sidesId, thicknessMm, widthMm: isDetailedPanelCalculation() ? automaticPositionEdgeWidth(thicknessMm) : num(state.widthMm) };
+    return { mode, sidesId, thicknessMm, widthMm: num(state.widthMm) || automaticPositionEdgeWidth(thicknessMm) };
   }
 
   function capturePositionEdgeStateFromDom() {
@@ -4263,7 +4266,7 @@
     const item = resolveEdgeCatalogItem("attached", { thicknessMm: state.thicknessMm });
     const widths = edgeAvailableWidths(item).filter(edgeWidthFitsProduct);
     return item
-      ? `<select data-position-edge-width${isDetailedPanelCalculation() ? " disabled" : ""}><option value="">Выберите ширину</option>${widths.map((width) => `<option value="${esc(width)}"${Number(state.widthMm) === Number(width) ? " selected" : ""}>${width} мм</option>`).join("")}</select>`
+      ? `<select data-position-edge-width><option value="">Выберите ширину</option>${widths.map((width) => `<option value="${esc(width)}"${Number(state.widthMm) === Number(width) ? " selected" : ""}>${width} мм</option>`).join("")}</select>`
       : `<input data-position-edge-width${isDetailedPanelCalculation() ? " readonly" : ""} type="number" min="1" value="${esc(state.widthMm || "")}" />`;
   }
 
@@ -4325,7 +4328,7 @@
   function automaticBaseRateFor(thicknessRaw, sides, baseId = selectedBase()?.id || "mdf") {
     const row = nonstandardRateRowFor(thicknessRaw, sides, baseId);
     const rate = num(row?.baseRatePerM2);
-    return Number.isFinite(rate) ? rate : null;
+    return Number.isFinite(rate) ? rate * (1 + Number(data?.meta?.productionMarkupPercent ?? 50) / 100) : null;
   }
 
   function standardProductionRateRowFor(thicknessRaw, sides, veneerThickness = selectedVeneerThickness(), baseId = selectedBase()?.id || "mdf") {
@@ -4347,7 +4350,7 @@
     return Number.isFinite(rate) && rate > 0 ? rate : null;
   }
 
-  const BASE_WORK_RETAIL_FALLBACK_WARNING = "Скидка по условию клиента для основы и работы не применена. При необходимости укажите ручную скидку";
+  const BASE_WORK_RETAIL_FALLBACK_WARNING = "Для основы и работы применена розничная ставка: скидка по выбранному условию клиента не подтверждена";
 
   function priceListRateConditionState({ row, defaultRate, conditionId, adjustmentId, componentLabel }) {
     const rate = num(defaultRate);
@@ -6287,7 +6290,7 @@
         hasPartialPrice = true;
       } else if (!calibration.valid) {
         calibrationPricingStatus = "invalid_base_thickness";
-        if (addAttempted || touchedFields.has("calibrationTarget")) warnings.push("Толщина основы после калибровки должна быть меньше исходной толщины основы.");
+        if (addAttempted || touchedFields.has("calibrationTarget")) warnings.push("Толщина после калибровки должна быть меньше исходной; для ДСП суммарный съём — от 1 мм.");
         hasPartialPrice = true;
       } else if (!Number.isFinite(calibrationRatePerM2PerMm) || calibrationRatePerM2PerMm <= 0) {
         calibrationPricingStatus = "missing_rate";
@@ -6569,17 +6572,17 @@
     const sideBThickness = itemThickness(otherSideMaterialForCompatibility);
     const selectedRoughThickness = roughSideRequested ? selectedRoughBackThickness() : null;
     const sideThicknessCompatible = !otherSideRequested || sameConfirmedThickness(veneerThickness, sideBThickness);
-    const roughSideCompatible = !roughSideRequested || (isExactlyOnePointFive(veneerThickness) && Number.isFinite(selectedRoughThickness) && selectedRoughThickness <= 1.5 + 0.001);
+    const roughSideCompatible = !roughSideRequested || roughBackCompatible(veneerThickness, selectedRoughThickness);
     if (requiresTwoFaceSides(veneerThickness) && sides !== 2) warnings.push(document.body.classList.contains("quick-panels-page") ? twoSidedVeneerRequirementMessage() : "Шпон толщиной 2 мм и более требует двусторонней оклейки.");
     if (otherSideRequested && isReadyShirt(selectedVeneerA || selectedVeneerAGroup) && !Number.isFinite(veneerThickness)) {
       warnings.push("Для выбора другого материала необходимо указать подтверждённую толщину готовой рубашки");
     } else if (otherSideRequested && otherSideMaterialForCompatibility && !sideThicknessCompatible) {
       warnings.push("Для второй стороны выберите материал той же толщины");
     }
-    if (roughSideRequested && !isExactlyOnePointFive(veneerThickness)) {
-      warnings.push("Черновой шпон на второй стороне разрешён только для лицевого шпона 1,5 мм.");
+    if (roughSideRequested && !roughBackAllowedForFace(veneerThickness)) {
+      warnings.push("Для чернового оборота нужна подтверждённая толщина лицевого шпона.");
     } else if (roughSideRequested && !Number.isFinite(selectedRoughThickness)) {
-      warnings.push("Выберите подтверждённую толщину чернового шпона обратной стороны до 1,5 мм включительно.");
+      warnings.push("Выберите толщину чернового оборота: при лицевом шпоне от 2 мм толщина должна совпадать.");
     }
 
     let weightMin = 0, weightMax = 0, hasWeight = false;
@@ -6809,7 +6812,7 @@
       ratePerM2: Number.isFinite(roughBackRatePerM2) ? roughBackRatePerM2 : null,
       materialCost: roughBackPricingStatus === "calculated" ? roughBackCostTotal : null,
       pricingStatus: roughBackPricingStatus === "not_required" ? "requires_clarification" : roughBackPricingStatus,
-      source: roughBackOneMmTemporaryRateApplies() ? "temporary_team_rate_1mm_as_1_5mm_440_rub_m2" : "meta.roughBackVeneerRatesPerM2ByThickness"
+      source: "meta.roughBackVeneerRatesPerM2ByThickness"
     } : null;
     let retailAvgM2 = totalArea > 0 ? retailTotal / totalArea : null;
     if (isDetailedPanelCalculation() && totalArea > 0 && mdfPricings.length === validSizes.length
@@ -6870,7 +6873,7 @@
 
     if (isLacquerFinish(finishId)) {
       rows.push(specRow("Стороны покрытия", normalized.sides || "—", childLevel));
-      if (isAcrylicLacquer(finishId)) {
+      if (usesStandardLacquerProcess(finishId)) {
         const process = data?.finishParameters?.lacquerProcesses?.find((item) => item.id === normalized.lacquerProcess);
         rows.push(specRow("Схема", process?.name || "—", childLevel));
       }
@@ -7711,10 +7714,10 @@
 
     if (sides === 2 && form.veneerBModeSelect.value === "rough") {
       const roughThickness = selectedRoughBackThickness();
-      if (!isExactlyOnePointFive(veneerThickness)) {
-        add("veneerBMode", "допустимый материал обратной стороны", form.veneerBModeSelect, "Черновой шпон на второй стороне разрешён только для лицевого шпона 1,5 мм.", form.veneerBModeHint);
-      } else if (!Number.isFinite(roughThickness) || roughThickness > 1.5 + 0.001) {
-        add("veneerBRoughThickness", "толщину чернового шпона обратной стороны", form.veneerBRoughThicknessSelect, "Выберите подтверждённую толщину чернового шпона обратной стороны до 1,5 мм включительно.");
+      if (!roughBackAllowedForFace(veneerThickness)) {
+        add("veneerBMode", "допустимый материал обратной стороны", form.veneerBModeSelect, "Для чернового оборота нужна подтверждённая толщина лицевого шпона.", form.veneerBModeHint);
+      } else if (!Number.isFinite(roughThickness) || !roughBackCompatible(veneerThickness, roughThickness)) {
+        add("veneerBRoughThickness", "толщину чернового шпона обратной стороны", form.veneerBRoughThicknessSelect, "Выберите толщину чернового оборота: при лицевом шпоне от 2 мм толщина должна совпадать.");
       }
     }
 
@@ -7749,6 +7752,9 @@
       add("calibrationTarget", "толщину после калибровки", form.calibrationTargetInput, "Толщина основы после калибровки должна быть меньше исходной толщины основы.", form.calibrationTargetError);
     }
 
+    if (calibration.enabled && base?.id?.startsWith("plywood_") && readSizeRows().some(size => size.length > 1280 && size.width > 1280)) {
+      add("calibrationSize", "габарит калибровки фанеры", form.calibrationSelect, "Для калибровки фанеры хотя бы один размер должен быть не больше 1280 мм.");
+    }
     if (!result?.validSizes?.length) {
       add("sizes", "хотя бы один заполненный размер", form.addSizeRowBtn, "Не добавлен ни один заполненный размер.", form.sizeBlockError, "sizeBlock");
     }
@@ -8309,6 +8315,13 @@
       if(form.specPartialNote)form.specPartialNote.textContent=form.finalPriceNote.textContent;
     }
     updateVeneerLayoutWarnings(lastCalculation);
+    let toningNote = el("toningRecommendation");
+    if (!toningNote) {
+      toningNote = document.createElement("p"); toningNote.id = "toningRecommendation"; toningNote.className = "field__note";
+      form.toningSelect.closest(".field")?.append(toningNote);
+    }
+    toningNote.textContent = "Тонировка мультишпона и дизайн-шпона не рекомендуется, но возможна.";
+    toningNote.classList.toggle("is-hidden", !["multi", "design"].includes(selectedMaterialType()) || !isLacquerFinish(form.finishSelect.value));
     if (window.WoodstockPanelsView?.changed) window.WoodstockPanelsView.changed(lastCalculation);
   }
 
@@ -8327,7 +8340,7 @@
 
     updateLacquerExecutionOptions();
     const gloss100 = lacquer && form.lacquerExecutionSelect?.value === GLOSS_100_EXECUTION;
-    const acrylic = isAcrylicLacquer(finishId) && !gloss100;
+    const acrylic = usesStandardLacquerProcess(finishId) && !gloss100;
 
     if (!lacquer) {
       if (form.toningSelect) form.toningSelect.value = "no";
@@ -8338,7 +8351,7 @@
     } else if (gloss100) {
       if (form.lacquerGlossSelect) form.lacquerGlossSelect.value = "";
       if (form.lacquerProcessSelect) form.lacquerProcessSelect.value = "";
-    } else if (!isAcrylicLacquer(finishId) && form.lacquerProcessSelect) {
+    } else if (!usesStandardLacquerProcess(finishId) && form.lacquerProcessSelect) {
       form.lacquerProcessSelect.value = "";
     }
 
@@ -8384,7 +8397,7 @@
 
   function updateLacquerProcessOptions() {
     if (!form.lacquerProcessSelect) return;
-    const acrylic = isAcrylicLacquer(form.finishSelect.value);
+    const acrylic = usesStandardLacquerProcess(form.finishSelect.value);
     const gloss100 = acrylic && form.lacquerExecutionSelect?.value === GLOSS_100_EXECUTION;
     if (!acrylic || gloss100) {
       form.lacquerProcessSelect.innerHTML = "";
@@ -8498,7 +8511,7 @@
       const finishId = state.finishId;
       const lacquer = isLacquerFinish(finishId);
       const gloss100 = lacquer && state.lacquerExecution === GLOSS_100_EXECUTION;
-      const acrylic = isAcrylicLacquer(finishId) && !gloss100;
+      const acrylic = usesStandardLacquerProcess(finishId) && !gloss100;
       const enamel = finishId === "enamel";
       const active = finishUsesSides(finishId);
       if (active && !state.sidesManual) {
@@ -9115,12 +9128,12 @@
     }
     if (sides === 2 && sideBSelectionModeForSave === "rough") {
       const roughThickness = selectedRoughBackThickness();
-      if (!isExactlyOnePointFive(veneerThickness)) {
-        form.saveStatus.textContent = "Черновой шпон на второй стороне разрешён только для лицевого шпона 1,5 мм.";
+      if (!roughBackAllowedForFace(veneerThickness)) {
+        form.saveStatus.textContent = "Для чернового оборота нужна подтверждённая толщина лицевого шпона.";
         return;
       }
-      if (!Number.isFinite(roughThickness) || roughThickness > 1.5 + 0.001) {
-        form.saveStatus.textContent = "Выберите подтверждённую толщину чернового шпона обратной стороны до 1,5 мм включительно.";
+      if (!Number.isFinite(roughThickness) || !roughBackCompatible(veneerThickness, roughThickness)) {
+        form.saveStatus.textContent = "Выберите толщину чернового оборота: при лицевом шпоне от 2 мм толщина должна совпадать.";
         return;
       }
     }
@@ -9199,6 +9212,8 @@
         ? { source: "production", sourceLabel: "Определяется производством на общей странице спецификации", cost: null }
         : { source: "automatic", sourceLabel: "Автоматический расчёт", cost: null },
       pricingUnavailable: Boolean(lastCalculation.pricingUnavailable),
+      pricingRevision: "20261124-confirmed-answers",
+      productionMarkupPercent: 50,
       requiresProductionCost: Boolean(lastCalculation.requiresProductionCost),
       requiresBaseProductionCost: Boolean(lastCalculation.requiresBaseProductionCost),
       requiresLayoutProductionCost: Boolean(lastCalculation.requiresLayoutProductionCost),
@@ -9514,6 +9529,7 @@
         if (form.calibrationDepthInput) form.calibrationDepthInput.value = "";
         clearValidationFor(form.calibrationTargetInput, "calibrationTarget", form.calibrationTargetError);
       }
+      applyVeneerThicknessRules();
       updateBaseProductionCostHint();
       updateThicknessWarnings();
       updateEdgeUI();
@@ -9862,9 +9878,35 @@
     if (!window.WoodstockPanelsView || new URLSearchParams(location.search).has("specEngine")) bindFileInput(form.filesInput, form.selectedFiles, true);
   }
 
+  function applyProductionMarkup(source) {
+    if (source.meta.clientProductionMarkupApplied) return;
+    const factor = 1 + Number(source.meta.productionMarkupPercent ?? 50) / 100;
+    const multiply = object => {
+      if (!object || typeof object !== "object") return;
+      Object.keys(object).forEach(key => {
+        if (typeof object[key] === "number") object[key] *= factor;
+        else if (object[key] && typeof object[key] === "object") multiply(object[key]);
+      });
+    };
+    [source.nonstandardRates, source.standardProductionRates, source.cuttingRates, source.edgeRates].forEach(rows =>
+      (rows || []).forEach(row => {
+        Object.keys(row).filter(key => /ratePer/i.test(key) && !/^baseRate/.test(key)).forEach(key => {
+          if (Number.isFinite(row[key])) row[key] *= factor;
+        });
+        multiply(row.pricesPerM2);
+      }));
+    multiply(source.meta.sandingRatesPerM2);
+    ["isolatorRatePerM2", "toningRatePerM2", "calibrationRatePerM2For1Mm", "diagonalWorkSurchargePerM2", "herringboneWorkSurchargePerM2"].forEach(key => {
+      if (Number.isFinite(source.meta[key])) source.meta[key] *= factor;
+    });
+    (source.finishParameters?.lacquerProcesses || []).forEach(process => multiply(process.rates));
+    multiply(source.finishRates);
+    source.meta.clientProductionMarkupApplied = true;
+  }
+
   async function init() {
     try {
-      const response = await fetch(DATA_URL); if (!response.ok) throw new Error(`HTTP ${response.status}`); data = await response.json();
+      const response = await fetch(DATA_URL); if (!response.ok) throw new Error(`HTTP ${response.status}`); data = await response.json(); applyProductionMarkup(data);
       const customLayout = data.layouts.find(layout => layout.id === "custom");
       if (customLayout) customLayout.name = "Индивидуальная раскладка";
       data.meta.customLayoutProductionCostNote = data.meta.customLayoutProductionCostNote?.replace("«По ТЗ»", "«Индивидуальная раскладка»");
@@ -9977,6 +10019,7 @@
       }
     }
     window.WoodstockSpecificationState.restore(form.root,state.form,(input,files)=>uploadedFilesState.set(input,files));
+    form.baseThicknessSelect.querySelectorAll('option[value="6+6+6"]').forEach(option => option.remove());
     selectedVeneerAGroup=state.selectedVeneerAGroup; selectedVeneerA=state.selectedVeneerA;
     selectedVeneerBGroup=state.selectedVeneerBGroup; selectedVeneerB=state.selectedVeneerB;
     attachedEdgeMaterialAuto=state.attachedEdgeMaterialAuto; separateEdgeMaterialAuto=state.separateEdgeMaterialAuto;
@@ -9997,6 +10040,7 @@
       bindFileInput(input,output,true);
       input.addEventListener('change',()=>{updateSizeTransitionUI(row);recalc();});
     });
+    applyVeneerThicknessRules();
     arrangeDetailedSideFields();
     syncVeneerPricePosition("A");
     syncVeneerPricePosition("B");
