@@ -95,10 +95,10 @@
     if(productType!=='plate')return;
     const state=quoteState();
     renderRequest();
-    $('productionScope').innerHTML=records.filter(productionEligible).map(record=>'<label class="toggle-line"><input type="checkbox" data-production-scope="'+esc(record.id)+'" '+(inProduction(record)?'checked ':'')+(productionRequired(record)?'disabled':'')+'><span>Изделие '+(records.indexOf(record)+1)+' · '+esc(record.title)+(productionRequired(record)?' — требуется цена производства':'')+'</span></label>').join('');
+    $('productionScope').innerHTML=records.filter(productionEligible).map(record=>'<label class="toggle-line"><input type="checkbox" data-production-scope="'+esc(record.id)+'" '+(inProduction(record)?'checked ':'')+(productionRequired(record)?'disabled':'')+'><span>Изделие '+(records.indexOf(record)+1)+' · '+esc(specificationTitle(record))+(productionRequired(record)?' — требуется цена производства':'')+'</span></label>').join('');
     $('productionStatus').textContent=!state.scope.length?'Все позиции имеют автоматический расчёт. При необходимости включите изделия в общий запрос производства.':state.valid?'Стоимость подтверждена для текущего состава запроса.':state.stale?'Состав или параметры запроса изменены. Требуется повторное подтверждение стоимости производства.':'Введите общую стоимость производства для отмеченных изделий.';
     $('productionSummary').innerHTML=costLines([['Себестоимость производства',money(state.cost)],['Наценка, '+(state.valid?n(state.markup):$('productionMarkupInput').value)+'%',state.valid?money(state.clientCost-state.cost):'Уточняется'],['Производство для клиента',money(state.clientCost)]]);
-    $('productionScopeNote').textContent=state.scope.length?'Выбранные изделия входят в один общий запрос.':'Отметьте изделие, если нужна общая цена от производства. Введите сумму только после согласования состава запроса.';
+    $('productionScopeNote').textContent=state.scope.length?'Выбранные изделия входят в один общий запрос. Общая сумма не распределяется по отдельным размерам.':'Отметьте изделие, если нужна общая цена от производства. Введите сумму только после согласования состава запроса.';
     document.querySelector('.spec-production-coverage').classList.toggle('is-hidden',!state.scope.length);
     $('confirmProduction').disabled=!!editorController||busy||!state.scope.length;
     $('productionInputs').classList.toggle('is-hidden',!state.scope.length);
@@ -252,11 +252,67 @@
   function costLines(rows){return rows.map(([label,value,note])=>'<div class="spec-money-line"><span>'+esc(label)+(note?'<small>'+esc(note)+'</small>':'')+'</span><strong>'+esc(value??'Уточняется')+'</strong></div>').join('');}
   function rollCost(record){return record.edge?.mode==='separate'&&!record.pricingUnavailable?effectiveEdge(record)?.materialCost:null;}
   function productDisplayCost(record){const value=known(record),edge=rollCost(record);return Number.isFinite(value)&&Number.isFinite(edge)?roundMoney(value-edge):value;}
+  // Display-only labels use the saved calculation parameters, never an inferred product purpose.
+  function specificationTitle(record){
+    if(!record)return 'Новая позиция';
+    if(record.productType==='flooring')return record.species||'Инженерная доска';
+    const base=record.title||[record.base,record.baseThickness!=null?record.baseThickness+' мм':''].filter(Boolean).join(' ');
+    const face=record.materialSides?.A?.name||record.veneerA;
+    return [base,face].filter(Boolean).join(' · ')||'Плитное изделие';
+  }
+  function thicknessLabel(value){
+    if(value===null||value===undefined||value==='')return '';
+    return typeof value==='number'?n(value)+' мм':(/\s*мм\s*$/i.test(String(value))?String(value):String(value).replace('.',',')+' мм');
+  }
+  function positionSubtitle(record){
+    if(!record)return '';
+    if(record.productType==='flooring'){
+      const size=[Number.isFinite(record.length)?'Длина '+n(record.length)+' мм':'',Number.isFinite(record.width)?'Ширина '+n(record.width)+' мм':''].filter(Boolean).join(' · ');
+      return [record.patternName,thicknessLabel(record.totalThickness)?'Общая толщина '+thicknessLabel(record.totalThickness):'',size].filter(Boolean).join(' · ');
+    }
+    const thickness=thicknessLabel(record.materialSides?.A?.thicknessMm??record.veneerThickness);
+    return thickness?(record.materialType==='ready_shirt'?'Толщина лицевой рубашки ':'Толщина лицевого шпона ')+thickness:'';
+  }
+  function positionOverview(record,index){
+    if(!record)return '';
+    if(record.productType==='flooring'){
+      const metrics=[['Площадь помещения',Number.isFinite(record.baseArea)?n(record.baseArea)+' м²':'—'],['Запас на укладку',Number.isFinite(record.wastePercent)?n(record.wastePercent)+'%':'—'],['Итого к расчёту',Number.isFinite(record.areaWithWaste)?n(record.areaWithWaste)+' м²':'—'],['Цена за м² с НДС',money(record.finalUnitPrice)]];
+      return '<div class="spec-position-overview spec-floor-overview">'+metrics.map(([label,value])=>'<div><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong></div>').join('')+'</div>';
+    }
+    const sizes=record.sizes||[],quantity=sizes.reduce((sum,row)=>sum+Number(row.quantity||0),0),area=sizes.reduce((sum,row)=>sum+Number(row.area||0),0);
+    const sizeRows=sizes.map((row,i)=>[(index+1)+'.'+(i+1),n(row.length)+' × '+n(row.width),n(row.quantity),n(row.area)]);
+    return '<div class="spec-position-overview">'+table(['№','Размер, мм','Кол-во, шт.','Площадь, м²'],sizeRows,'spec-overview-table')+(sizes.length>1?'<p class="spec-overview-total">Итого: <strong>'+esc(n(quantity))+' шт. · '+esc(n(area))+' м²</strong></p>':'')+'</div>';
+  }
+  function positionStatus(record){
+    const shared=inProduction(record),quote=quoteState(),incomplete=partial(record),amount=productDisplayCost(record);
+    const requiresQuote=shared&&!quote.valid;
+    const label=shared?'Материалы изделия · производство общей суммой':incomplete&&Number.isFinite(amount)?'Рассчитанная часть с НДС':'';
+    const price='<strong>'+money(amount)+'</strong>'+(label?'<small>'+esc(label)+'</small>':'');
+    const warnings=[...effectiveWarnings(record)];
+    const reasons=requiresQuote?requestReasons(record):[];
+    const pending=(record.sizes||[]).flatMap(row=>row.pendingCosts||[]).filter(reason=>!shared||!productionReason(reason));
+    const notes=[...new Set([...warnings,...(incomplete?pending:[])])].filter(note=>!reasons.includes(note));
+    const unallocated=record.specification?.unallocatedCost;
+    const warningTitle=requiresQuote?'Требуется стоимость от производства':incomplete?'Расчёт требует уточнения':'';
+    let notice='';
+    if(warningTitle||notes.length||reasons.length||unallocated){
+      notice='<div class="spec-card-notices">'+(warningTitle?'<div class="spec-card-warning"><strong>'+esc(warningTitle)+'</strong>'+reasons.map(reason=>'<p>'+esc(reason)+'</p>').join('')+'</div>':'')+notes.map(note=>'<p class="field__note">'+esc(note)+'</p>').join('')+(unallocated?'<p class="field__note">Общие рассчитанные затраты '+money(unallocated)+' уже включены в итог и не распределены по строкам.</p>':'')+'</div>';
+    }
+    return {price,notice};
+  }
+  function refreshPositionStatuses(){
+    document.querySelectorAll('[data-spec-record]').forEach(card=>{
+      const record=records[Number(card.dataset.specRecord)];if(!record)return;
+      const state=positionStatus(record);
+      card.querySelector('[data-position-price]').innerHTML=state.price;
+      card.querySelector('[data-position-notice]').innerHTML=state.notice;
+    });
+  }
   function productTools(record,index){return actionButton('edit','Редактировать',index,0)+(record.productType==='flooring'||record.sizes.length===1?actionButton('duplicate','Дублировать',index,0)+actionButton('delete','Удалить',index,0):'');}
   function rollCard(record,index){
     const edge=effectiveEdge(record),key=record.id+'-roll',meters=edge.orderedMeters??edge.meters??edge.calculatedMeters;
     const detail=parameterList([['Материал',edge.displayName||edge.veneerName||edge.name],['Тип кромки',edge.typeName],['Ширина / толщина',n(edge.widthMm)+' × '+n(edge.thicknessMm)+' мм'],['Метраж к заказу',n(meters)+' пог. м'],['Цена за пог. м с НДС',money(edge.pricePerRunningM)],['Источник цены',edge.priceCatalogSource],['Комментарий',edge.comment]])+'<p class="field__note">Кромка поставляется отдельно в рулоне. Стоимость входит в итог заказа один раз; работы по облицовке деталей не заказываются.</p>';
-    return '<article class="spec-position spec-roll-card"><div class="spec-position-head"><div><p class="kicker">Кромка в рулоне · к изделию '+(index+1)+'</p><h3>'+esc(join([edge.typeName,edge.displayName||edge.veneerName||edge.name]).replace(/\n/g,' · '))+'</h3><p class="field__note">'+esc(n(edge.widthMm)+' × '+n(edge.thicknessMm)+' мм · '+n(meters)+' пог. м')+'</p></div><div class="spec-position-price"><span class="spec-tag">Материал отдельно</span><strong>'+money(rollCost(record))+'</strong></div></div><div class="spec-position-meta"><div><span>Метраж</span><strong>'+esc(n(meters))+' пог. м</strong></div><div><span>Поставка</span><strong>В рулоне</strong></div></div><div class="spec-position-tools"><button type="button" class="secondary-button" data-card-toggle="'+esc(key)+'" aria-expanded="'+expandedCards.has(key)+'">Все характеристики</button>'+actionButton('edit','Редактировать',index,0)+'</div><details class="spec-position-details" data-card-key="'+esc(key)+'" '+(expandedCards.has(key)?'open':'')+'><summary>Характеристики кромки</summary><div>'+detail+'</div></details></article>';
+    return '<article class="spec-position spec-roll-card"><div class="spec-position-head"><div><p class="kicker">Кромка в рулоне · к изделию '+(index+1)+'</p><h3>'+esc(join([edge.typeName,edge.displayName||edge.veneerName||edge.name]).replace(/\n/g,' · '))+'</h3><p class="field__note">'+esc(n(edge.widthMm)+' × '+n(edge.thicknessMm)+' мм · '+n(meters)+' пог. м')+'</p></div><div class="spec-position-price"><strong>'+money(rollCost(record))+'</strong></div></div><details class="spec-position-details" data-card-key="'+esc(key)+'" '+(expandedCards.has(key)?'open':'')+'><summary>Характеристики кромки</summary><div>'+detail+'</div></details><div class="spec-position-tools">'+actionButton('edit','Редактировать',index,0)+'</div></article>';
   }
   function recordDetails(record,index){
     if(!record)return '';
@@ -299,9 +355,9 @@
   function renderRequest(){
     const opened=new Set(Array.from(document.querySelectorAll('[data-request-open][open]')).map(node=>node.dataset.requestOpen));
     const scope=quoteState().scope;
-    $('productionRequest').innerHTML=scope.map(record=>{
+    $('productionRequest').innerHTML=(scope.length?'<h3 class="spec-production-step">Запрос производству</h3>':'')+scope.map(record=>{
       const count=record.sizes.reduce((sum,row)=>sum+Number(row.quantity||0),0);
-      return '<section class="spec-scope-card"><h3>Изделие '+(records.indexOf(record)+1)+' · '+esc(record.title)+'</h3><p>'+esc(record.sizes.length+' разм. · '+n(count)+' шт. · одна общая сумма')+'</p><p>Причина запроса: '+esc(requestReasons(record).join('; '))+'</p><details data-request-open="'+esc(record.id)+'" '+(opened.has(record.id)?'open':'')+'><summary>Параметры запроса</summary>'+parameterList(requestParameters(record))+requestSizeRows(record).map(row=>'<div class="spec-request-size"><h4>Строка '+esc(row[0])+'</h4>'+parameterList(['Размер, мм','Количество, шт.','Изготовление','Покрытие','Кромка: стороны и материал','Переход рисунка','Комментарии и файлы'].map((label,i)=>[label,row[i+1]]))+'</div>').join('')+'</details></section>';
+      return '<section class="spec-scope-card"><h3>Изделие '+(records.indexOf(record)+1)+' · '+esc(specificationTitle(record))+'</h3><p>'+esc(record.sizes.length+' разм. · '+n(count)+' шт. · одна общая сумма')+'</p><p>Причина запроса: '+esc(requestReasons(record).join('; '))+'</p><details data-request-open="'+esc(record.id)+'" '+(opened.has(record.id)?'open':'')+'><summary>Параметры запроса</summary>'+parameterList(requestParameters(record))+requestSizeRows(record).map(row=>'<div class="spec-request-size"><h4>Строка '+esc(row[0])+'</h4>'+parameterList(['Размер, мм','Количество, шт.','Изготовление','Покрытие','Кромка: стороны и материал','Переход рисунка','Комментарии и файлы'].map((label,i)=>[label,row[i+1]]))+'</div>').join('')+'</details></section>';
     }).join('')+(scope.length?'<p class="field__note">Не входят в запрос: '+esc([...records.filter(record=>!inProduction(record)).map(record=>'изделие '+(records.indexOf(record)+1)),...records.filter(record=>record.edge?.mode==='separate').map(record=>'кромка в рулоне к изделию '+(records.indexOf(record)+1)),'упаковка и услуги'].join('; '))+'.</p>':'');
   }
   function render(){
@@ -329,29 +385,24 @@
       const record=records[index],key=record?.id||'new';
       const editing=!!editorController&&index===editorIndex;
       const card=document.createElement('article');card.className='spec-position';
-      const sizeText=record?.productType==='plate'?(record.sizes||[]).map(row=>n(row.length)+' × '+n(row.width)+' мм · '+n(row.quantity)+' шт.').join('; '):record?n(record.length)+' × '+n(record.width)+' мм · '+n(record.areaWithWaste)+' м²':'';
-      const isFloor=record?.productType==='flooring',quantity=record?(isFloor?n(record.areaWithWaste)+' м²':n(record.sizes.reduce((sum,row)=>sum+Number(row.quantity||0),0))+' шт.'):'—';
-      const area=record?(isFloor?record.areaWithWaste:record.sizes.reduce((sum,row)=>sum+Number(row.area||0),0)):null;
-      const kind=isFloor?'Инженерная доска':record?.sizes.length>1?'Плитные изделия · несколько размеров':record?.sizes[0]?.manufacturingType==='standard'?'Стандартная панель':record?.sizes[0]?.manufacturingType==='allowance20'?'Полуфабрикат':'Плитное изделие';
-      const source=record?(inProduction(record)?'Материалы отдельно':partial(record)?'Неполный расчёт':'Автоматическая цена'):'';
-      card.innerHTML='<div class="spec-position-head"><div><p class="kicker">Изделие '+(index===null?records.length+1:index+1)+' · '+esc(kind)+'</p><h3>'+esc([record?.title,record?.veneerA||record?.species].filter(Boolean).join(' · ')||'Новая позиция')+'</h3><p class="field__note">'+esc(sizeText)+'</p></div><div class="spec-position-price"><span class="spec-tag '+(record&&inProduction(record)?'spec-tag--warning':'')+'">'+esc(source)+'</span><strong>'+money(record?productDisplayCost(record):null)+'</strong>'+(record&&inProduction(record)?'<small>Материалы изделия; производство ниже</small>':'')+'</div></div><div class="spec-position-meta"><div><span>Площадь</span><strong>'+n(area)+' м²</strong></div><div><span>Количество</span><strong>'+esc(quantity)+'</strong></div>'+(!isFloor&&record?.sizes.length>1?'<div><span>Деталировка</span><strong>'+record.sizes.map((_,i)=>(index+1)+'.'+(i+1)).join(' + ')+'</strong></div>':'')+'</div>';
+      const isFloor=record?.productType==='flooring';
+      const subtitle=positionSubtitle(record);
+      if(record)card.dataset.specRecord=String(index);
+      card.innerHTML='<div class="spec-position-head"><div><p class="kicker">Изделие №'+(index===null?records.length+1:index+1)+(isFloor?' · Инженерная доска':'')+'</p><h3>'+esc(specificationTitle(record))+'</h3>'+(subtitle?'<p class="field__note">'+esc(subtitle)+'</p>':'')+'</div><div class="spec-position-price" data-position-price><strong>'+money(record?productDisplayCost(record):null)+'</strong></div></div>'+positionOverview(record,index)+'<div data-position-notice></div>';
       const tools=document.createElement('div');tools.className='spec-position-tools';
-      tools.innerHTML='<button type="button" class="secondary-button" data-card-toggle="'+esc(key)+'" aria-expanded="'+(editing||expandedCards.has(key))+'" '+(editing?'disabled':'')+'>'+(expandedCards.has(key)?'Скрыть характеристики':'Все характеристики')+'</button>'+(record&&!editing?productTools(record,index):'');
-      card.append(tools);
-      const details=document.createElement('details');details.className='spec-position-details';details.dataset.cardKey=key;details.open=editing||expandedCards.has(key);
-      details.innerHTML='<summary>Характеристики и деталировка</summary>';
+      tools.innerHTML=record&&!editing?productTools(record,index):'';
+      const details=document.createElement('details');details.className='spec-position-details'+(editing?' spec-editing':'');details.dataset.cardKey=key;details.open=editing||expandedCards.has(key);
+      details.innerHTML='<summary>'+(isFloor?'Все характеристики':'Характеристики и обработка')+'</summary>';
       const wrap=document.createElement('div');
       if(editing){
         wrap.className='spec-editor';wrap.innerHTML=table(headers,[]);
         const tbody=wrap.querySelector('tbody');trs.forEach(tr=>{Array.from(tr.cells).forEach((td,i)=>td.dataset.label=headers[i]);tr.classList.toggle('spec-editing-row',tr.hasAttribute('data-edit-group'));tbody.append(tr);});
       }else wrap.innerHTML=recordDetails(record,index);
-      details.append(wrap);card.append(details);cards.append(card);if(record?.edge?.mode==='separate'&&!editing){const holder=document.createElement('div');holder.innerHTML=rollCard(record,index);cards.append(holder.firstElementChild);}
+      details.append(wrap);card.append(details);if(tools.innerHTML)card.append(tools);cards.append(card);if(record?.edge?.mode==='separate'&&!editing){const holder=document.createElement('div');holder.innerHTML=rollCard(record,index);cards.append(holder.firstElementChild);}
     });
     $('productTables').innerHTML=cards.innerHTML;
     // cloneNode/innerHTML do not retain current values or FileLists; synchronize from the source controls.
     syncProxyValues();
-    const notes=records.flatMap((record,index)=>[...effectiveWarnings(record).map(note=>'Изделие '+(index+1)+': '+note),...(record.specification?.unallocatedCost?['Изделие '+(index+1)+': общие рассчитанные затраты '+money(record.specification.unallocatedCost)+' уже включены в итог и не распределены по строкам.']:[])]);
-    if(notes.length){const note=document.createElement('p');note.className='field__note';note.textContent=notes.join(' ');$('productTables').append(note);}
     renderEdgeTable();renderExtras();restoringFocus=suppress;
   }
   function renderExtras(){
@@ -360,8 +411,8 @@
     const selected=services();$('servicesTable').innerHTML=selected.length?costLines(selected.map(name=>[name,'Уточняется'])):'';
     const rows=conditions();$('conditionsSection').classList.toggle('is-hidden',!rows.length);$('conditionsTable').innerHTML=rows.length?costLines(rows.map(row=>['Изделие '+row[0]+' · '+row[1],row[4],join([row[2],row[3]])])):'';
     const result=totals();$('totalLabel').textContent=result.partial?'Стоимость рассчитанной части с НДС':'Итого с НДС';$('orderTotal').textContent=money(result.total);$('orderVat').textContent='В том числе НДС: '+money(result.vat);
-    const displayRows=records.flatMap((record,index)=>[['Изделие '+(index+1)+' · '+(record.title||record.species),money(productDisplayCost(record)),inProduction(record)?'Материалы отдельно от производства':partial(record)?'Рассчитанная часть':''],...(record.edge?.mode==='separate'?[['Кромка в рулоне · к изделию '+(index+1),money(rollCost(record)),'Материал отдельно']]:[])]);
-    if(quoteState().scope.length)displayRows.push(['Производство для клиента',money(quoteState().clientCost),'Одна сумма за выбранные изделия']);
+    const displayRows=records.flatMap((record,index)=>[['Изделие №'+(index+1),money(productDisplayCost(record)),inProduction(record)?'Материалы изделия':partial(record)?'Рассчитанная часть':''],...(record.edge?.mode==='separate'?[['Кромка в рулоне · к изделию '+(index+1),money(rollCost(record)),'Материал отдельно']]:[])]);
+    if(quoteState().scope.length)displayRows.push(['Производство для клиента',money(quoteState().clientCost),'']);
     if(selected.length)displayRows.push(['Упаковка и услуги','Уточняется',selected.join(', ')]);
     $('orderBreakdown').innerHTML=costLines(displayRows);
     $('summaryState').textContent=!records.length?'Нет позиций':result.partial?'Неполный расчёт':'Расчёт выполнен';
@@ -370,15 +421,16 @@
     $('orderVat').classList.toggle('is-hidden',result.partial);
     $('contactsPreview').textContent='Менеджер: '+(order.managerNameInput||'не указан')+' · Клиент: '+(order.clientNameInput||'не указан');
     $('servicesPreview').textContent=(selected.length?selected.join(', '):'Упаковка и услуги не выбраны');
-    $('productionState').textContent=quoteState().valid?'Сумма подтверждена':quoteState().stale?'Нужно повторное подтверждение':'Не подтверждена';
+    const quote=quoteState();$('productionState').textContent=!quote.scope.length?'Не требуется':quote.valid?'Сумма подтверждена':quote.stale?'Нужно повторное подтверждение':'Не подтверждена';$('productionState').classList.toggle('spec-tag--warning',!!quote.scope.length&&!quote.valid);
 
     let managerDetails=$('managerCalculationDetails');
     if(!managerDetails){managerDetails=document.createElement('details');managerDetails.id='managerCalculationDetails';managerDetails.className='spec-manager';$('summaryDetails').append(managerDetails);}
     const conditionsNode=$('conditionsSection');
-    managerDetails.innerHTML='<summary>Внутренняя детализация расчёта</summary><div><p class="field__note">Не включается в клиентскую спецификацию. Работы, входящие в цену изделия или производства, повторно не начисляются.</p>'+records.map((record,index)=>'<h3>Изделие '+(index+1)+' · '+esc(record.title||record.species)+'</h3>'+costLines((record.specification?.breakdown||[]).map(item=>[item.label,breakdownValue(record,item),item.note]))).join('')+'</div>';
+    managerDetails.innerHTML='<summary>Внутренняя детализация расчёта</summary><div><p class="field__note">Не включается в клиентскую спецификацию. Работы, входящие в цену изделия или производства, повторно не начисляются.</p>'+records.map((record,index)=>'<h3>Изделие '+(index+1)+' · '+esc(specificationTitle(record))+'</h3>'+costLines((record.specification?.breakdown||[]).map(item=>[item.label,breakdownValue(record,item),item.note]))).join('')+'</div>';
     managerDetails.append(conditionsNode);
 
-    $('partialNote').classList.toggle('is-hidden',!result.partial);$('partialNote').textContent='Расчёт неполный. Учтены только известные составляющие. Стоимость нерассчитанных составляющих'+(selected.length?', выбранных услуг и упаковки':'')+' уточняется. Полную стоимость подтвердит менеджер.';
+    $('partialNote').classList.toggle('is-hidden',!result.partial);$('partialNote').textContent='Полная стоимость уточняется.'+(edgeMinimumIssues().length?' '+edgeMinimumIssues().join(' '):'');
+    refreshPositionStatuses();
   }
   function closeEditor(){
     if(editorOriginalRecords){records=editorOriginalRecords;editorOriginalRecords=null;}
@@ -790,14 +842,6 @@
     order.productionQuote={cost,markup,signature:quoteSignature(),confirmedAt:new Date().toISOString()};saveOrder();render();
   });
   $('addPosition').addEventListener('click',()=>{location.href=(productType==='flooring'?'flooring.html':'panels.html')+'?fromSpecification=1';});
-  document.addEventListener('click',event=>{
-    const toggle=event.target.closest('[data-card-toggle]');if(!toggle)return;
-    const key=toggle.dataset.cardToggle;
-    const details=Array.from(document.querySelectorAll('[data-card-key]')).find(node=>node.dataset.cardKey===key);
-    if(!details)return;details.open=!details.open;
-    if(details.open)expandedCards.add(key);else expandedCards.delete(key);
-    toggle.setAttribute('aria-expanded',String(details.open));toggle.textContent=details.open?'Скрыть характеристики':'Все характеристики';
-  });
   document.addEventListener('click',event=>{
     const button=event.target.closest('[data-action]');if(!button)return;
     const index=button.dataset.index==='null'?null:Number(button.dataset.index),row=Number(button.dataset.row);
