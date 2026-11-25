@@ -2213,3 +2213,21 @@ input[type="file"]::file-selector-button:hover {
   .spec-position-tools > button:first-child { width:auto; }
   .spec-floor-overview { gap:12px; }
 }
+
+/* Compact plate sizes; the calculation form and export layout stay unchanged. */
+.spec-panel-overview { display:grid; gap:12px; }
+.spec-metric-grid { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(0,1fr); gap:14px; }
+.spec-metric-grid > div { min-width:0; display:grid; gap:4px; }
+.spec-metric-grid span,.spec-size-caption { font-size:12px; color:var(--muted); }
+.spec-metric-grid strong { font-size:15px; font-weight:500; overflow-wrap:anywhere; }
+.spec-size-overview + .spec-size-overview { border-top:1px solid var(--line); padding-top:12px; }
+.spec-size-caption { margin:0 0 8px; }
+.spec-panel-overview .spec-overview-total { margin:0; padding-top:10px; border-top:1px solid var(--line); }
+.spec-price-details .spec-money-line:last-child { border-bottom:0; font-weight:500; }
+.spec-price-subhead { font-size:13px; font-weight:500; margin:16px 0 0; }
+.spec-position-details > summary { list-style:none!important; display:flex!important; align-items:center; justify-content:space-between; gap:12px; }
+.spec-position-details > summary::-webkit-details-marker { display:none; }
+.spec-position-details > summary::after { content:""; width:7px; height:7px; flex:none; border-right:1.5px solid var(--muted); border-bottom:1.5px solid var(--muted); transform:rotate(45deg); margin:0 3px 4px 0; }
+.spec-position-details[open] > summary::after { transform:rotate(225deg); margin-bottom:0; }
+.spec-position-details.spec-editing > summary { display:none!important; }
+@media(max-width:520px){.spec-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}.spec-metric-grid > div:first-child{grid-column:1/-1;}}

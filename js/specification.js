@@ -51,8 +51,8 @@
   const productionEligible = record => record.productType==='plate';
   const productionRequired = record => productionEligible(record) && (record.productionCosts?.some(q=>q.required)||record.requiresProductionCost);
   function productionScope(){
-    const selected=new Set(order.productionScopeIds||[]);
-    return records.filter(record=>productionEligible(record)&&(selected.has(record.id)||productionRequired(record)));
+    // A production request is required by the calculation, not by a manual selection.
+    return records.filter(productionRequired);
   }
   function inProduction(record){return productionScope().some(item=>item.id===record.id);}
   function effectiveWarnings(record){return inProduction(record)&&quoteState().valid&&materialsComplete(record)?(record.warnings||[]).filter(note=>!/ставк|стоимость.*производ|цен.*производ|производственн.*сумм|производственн.*стоим/i.test(note)):(record.warnings||[]);}
@@ -91,14 +91,12 @@
   }
   function renderProduction(){
     const section=$('productionSection');if(!section)return;
-    section.classList.toggle('is-hidden',productType!=='plate'||!records.some(productionEligible));
-    if(productType!=='plate')return;
     const state=quoteState();
+    section.classList.toggle('is-hidden',productType!=='plate'||!state.scope.length);
+    if(productType!=='plate')return;
     renderRequest();
-    $('productionScope').innerHTML=records.filter(productionEligible).map(record=>'<label class="toggle-line"><input type="checkbox" data-production-scope="'+esc(record.id)+'" '+(inProduction(record)?'checked ':'')+(productionRequired(record)?'disabled':'')+'><span>Изделие '+(records.indexOf(record)+1)+' · '+esc(specificationTitle(record))+(productionRequired(record)?' — требуется цена производства':'')+'</span></label>').join('');
-    $('productionStatus').textContent=!state.scope.length?'Все позиции имеют автоматический расчёт. При необходимости включите изделия в общий запрос производства.':state.valid?'Стоимость подтверждена для текущего состава запроса.':state.stale?'Состав или параметры запроса изменены. Требуется повторное подтверждение стоимости производства.':'Введите общую стоимость производства для отмеченных изделий.';
+    $('productionStatus').textContent=!state.scope.length?'':state.valid?'Стоимость подтверждена.':state.stale?'Параметры запроса изменились. Подтвердите стоимость повторно.':'Введите общую стоимость производства для указанных изделий.';
     $('productionSummary').innerHTML=costLines([['Себестоимость производства',money(state.cost)],['Наценка, '+(state.valid?n(state.markup):$('productionMarkupInput').value)+'%',state.valid?money(state.clientCost-state.cost):'Уточняется'],['Производство для клиента',money(state.clientCost)]]);
-    $('productionScopeNote').textContent=state.scope.length?'Выбранные изделия входят в один общий запрос. Общая сумма не распределяется по отдельным размерам.':'Отметьте изделие, если нужна общая цена от производства. Введите сумму только после согласования состава запроса.';
     document.querySelector('.spec-production-coverage').classList.toggle('is-hidden',!state.scope.length);
     $('confirmProduction').disabled=!!editorController||busy||!state.scope.length;
     $('productionInputs').classList.toggle('is-hidden',!state.scope.length);
@@ -270,8 +268,18 @@
       const size=[Number.isFinite(record.length)?'Длина '+n(record.length)+' мм':'',Number.isFinite(record.width)?'Ширина '+n(record.width)+' мм':''].filter(Boolean).join(' · ');
       return [record.patternName,thicknessLabel(record.totalThickness)?'Общая толщина '+thicknessLabel(record.totalThickness):'',size].filter(Boolean).join(' · ');
     }
+    const sizes=record.sizes||[];
+    const kinds=[...new Set(sizes.map(manufacturingLabel).filter(Boolean))];
     const thickness=thicknessLabel(record.materialSides?.A?.thicknessMm??record.veneerThickness);
-    return thickness?(record.materialType==='ready_shirt'?'Толщина лицевой рубашки ':'Толщина лицевого шпона ')+thickness:'';
+    const face=record.materialSides?.A?.name||record.veneerA||'';
+    const hasThickness=thickness&&face.replace(/\./g,',').includes(thickness.replace(/\./g,','));
+    return [kinds.length===1?kinds[0]:kinds.length>1?'Разные типы изготовления':'',thickness&&!hasThickness?(record.materialType==='ready_shirt'?'Толщина лицевой рубашки ':'Лицевой шпон ')+thickness:''].filter(Boolean).join(' · ');
+  }
+  function manufacturingLabel(row){
+    return {standard:'Стандартная панель',allowance20:'Нестандартный полуфабрикат',exact:'Деталь в чистовой размер'}[row.manufacturingType]||'';
+  }
+  function overviewMetrics(metrics){
+    return '<div class="spec-metric-grid">'+metrics.map(([label,value])=>'<div><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong></div>').join('')+'</div>';
   }
   function positionOverview(record,index){
     if(!record)return '';
@@ -280,23 +288,48 @@
       return '<div class="spec-position-overview spec-floor-overview">'+metrics.map(([label,value])=>'<div><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong></div>').join('')+'</div>';
     }
     const sizes=record.sizes||[],quantity=sizes.reduce((sum,row)=>sum+Number(row.quantity||0),0),area=sizes.reduce((sum,row)=>sum+Number(row.area||0),0);
-    const sizeRows=sizes.map((row,i)=>[(index+1)+'.'+(i+1),n(row.length)+' × '+n(row.width),n(row.quantity),n(row.area)]);
-    return '<div class="spec-position-overview">'+table(['№','Размер, мм','Кол-во, шт.','Площадь, м²'],sizeRows,'spec-overview-table')+(sizes.length>1?'<p class="spec-overview-total">Итого: <strong>'+esc(n(quantity))+' шт. · '+esc(n(area))+' м²</strong></p>':'')+'</div>';
+    const entries=sizes.map((row,i)=>{
+      const metrics=[['Размер, мм',n(row.length)+' × '+n(row.width)],['Количество',n(row.quantity)+' шт.'],['Площадь',n(row.area)+' м²']];
+      return '<div class="spec-size-overview">'+(sizes.length>1?'<p class="spec-size-caption">Размер '+(i+1)+(manufacturingLabel(row)?' · '+esc(manufacturingLabel(row)):'')+'</p>':'')+overviewMetrics(metrics)+'</div>';
+    }).join('');
+    return '<div class="spec-position-overview spec-panel-overview">'+entries+(sizes.length>1?'<p class="spec-overview-total">Итого: <strong>'+esc(n(quantity))+' шт. · '+esc(n(area))+' м²</strong></p>':'')+'</div>';
+  }
+  function priceDetails(record,index){
+    if(record.productType==='flooring'){
+      const rows=[['Розничная цена',money(record.catalogPrice)+' / м²']];
+      if(record.discountPercent){
+        const label=record.pricingTier?.name||'Скидка';
+        rows.push([label.replace(/\s*\d+(?:[.,]\d+)?\s*%\s*$/,'').trim()||'Скидка','−'+n(record.discountPercent)+'%']);
+      }
+      (record.markups||[]).filter(item=>item.percent).forEach(item=>rows.push([item.name||item.label||item.id,'+'+n(item.percent)+'%']));
+      rows.push(['Цена с учётом условий',money(record.finalUnitPrice)+' / м²'],['Метраж к расчёту',n(record.areaWithWaste)+' м²'],['Итого с НДС',money(record.total)]);
+      return costLines(rows);
+    }
+    const shared=inProduction(record);
+    const items=(shared?materialParts(record):(record.specification?.breakdown||[])).filter(item=>!(record.edge?.mode==='separate'&&/^Кромка отдельно — материал/.test(item.label)));
+    const rows=items.map(item=>[item.label,breakdownValue(record,item)]);
+    if(record.edge?.mode!=='separate'&&edgeDiscount(record).delta&&!shared)rows.push(['Корректировка стоимости кромки',money(edgeDiscount(record).delta)]);
+    if(shared)rows.push(['Производственные работы и основа',quoteState().valid?'Учтены общей суммой':'Уточняются']);
+    const applied=conditions().filter(row=>String(row[0]).split('.')[0]===String(index+1)&&!(record.edge?.mode==='separate'&&/кромк/i.test(row[1])));
+    let markup=costLines(rows);
+    if(applied.length)markup+='<h4 class="spec-price-subhead">Применённые условия</h4>'+costLines(applied.map(row=>[row[1]+' · '+row[2],row[4],row[3]]));
+    if(record.specification?.unallocatedCost&&record.edge?.mode!=='separate')markup+='<p class="field__note">Общие затраты '+money(record.specification.unallocatedCost)+' учтены в расчёте; по размерам не распределены.</p>';
+    markup+=costLines([[shared?'Материалы изделия':partial(record)?'Рассчитанная часть':'Итого с НДС',money(productDisplayCost(record))]]);
+    return markup;
   }
   function positionStatus(record){
     const shared=inProduction(record),quote=quoteState(),incomplete=partial(record),amount=productDisplayCost(record);
     const requiresQuote=shared&&!quote.valid;
-    const label=shared?'Материалы изделия · производство общей суммой':incomplete&&Number.isFinite(amount)?'Рассчитанная часть с НДС':'';
+    const label=shared?'Материалы изделия; производство отдельно':incomplete&&Number.isFinite(amount)?'Рассчитанная часть с НДС':'';
     const price='<strong>'+money(amount)+'</strong>'+(label?'<small>'+esc(label)+'</small>':'');
     const warnings=[...effectiveWarnings(record)];
     const reasons=requiresQuote?requestReasons(record):[];
     const pending=(record.sizes||[]).flatMap(row=>row.pendingCosts||[]).filter(reason=>!shared||!productionReason(reason));
     const notes=[...new Set([...warnings,...(incomplete?pending:[])])].filter(note=>!reasons.includes(note));
-    const unallocated=record.specification?.unallocatedCost;
     const warningTitle=requiresQuote?'Требуется стоимость от производства':incomplete?'Расчёт требует уточнения':'';
     let notice='';
-    if(warningTitle||notes.length||reasons.length||unallocated){
-      notice='<div class="spec-card-notices">'+(warningTitle?'<div class="spec-card-warning"><strong>'+esc(warningTitle)+'</strong>'+reasons.map(reason=>'<p>'+esc(reason)+'</p>').join('')+'</div>':'')+notes.map(note=>'<p class="field__note">'+esc(note)+'</p>').join('')+(unallocated?'<p class="field__note">Общие рассчитанные затраты '+money(unallocated)+' уже включены в итог и не распределены по строкам.</p>':'')+'</div>';
+    if(warningTitle||notes.length||reasons.length){
+      notice='<div class="spec-card-notices">'+(warningTitle?'<div class="spec-card-warning"><strong>'+esc(warningTitle)+'</strong>'+reasons.map(reason=>'<p>'+esc(reason)+'</p>').join('')+'</div>':'')+notes.map(note=>'<p class="field__note">'+esc(note)+'</p>').join('')+'</div>';
     }
     return {price,notice};
   }
@@ -306,6 +339,7 @@
       const state=positionStatus(record);
       card.querySelector('[data-position-price]').innerHTML=state.price;
       card.querySelector('[data-position-notice]').innerHTML=state.notice;
+      const priceBody=card.querySelector('[data-position-cost]');if(priceBody)priceBody.innerHTML=priceDetails(record,Number(card.dataset.specRecord));
     });
   }
   function productTools(record,index){return actionButton('edit','Редактировать',index,0)+(record.productType==='flooring'||record.sizes.length===1?actionButton('duplicate','Дублировать',index,0)+actionButton('delete','Удалить',index,0):'');}
@@ -338,7 +372,7 @@
       if(record.requiresFinishProductionCost)reasons.push('Стоимость покрытия');
       if(record.requiresReadyShirtProductionCost)reasons.push('Стоимость фанеровки готовой рубашкой');
     }
-    return [...new Set(reasons.length?reasons:[productionRequired(record)?'Требуется стоимость производства по выбранным параметрам':'Изделие включено менеджером в общий запрос'])];
+    return [...new Set(reasons.length?reasons:[productionRequired(record)?'Требуется стоимость производства по выбранным параметрам':'Стоимость производства не требуется'])];
   }
   function requestParameters(record){
     const edge=effectiveEdge(record)||{};
@@ -398,7 +432,9 @@
         wrap.className='spec-editor';wrap.innerHTML=table(headers,[]);
         const tbody=wrap.querySelector('tbody');trs.forEach(tr=>{Array.from(tr.cells).forEach((td,i)=>td.dataset.label=headers[i]);tr.classList.toggle('spec-editing-row',tr.hasAttribute('data-edit-group'));tbody.append(tr);});
       }else wrap.innerHTML=recordDetails(record,index);
-      details.append(wrap);card.append(details);if(tools.innerHTML)card.append(tools);cards.append(card);if(record?.edge?.mode==='separate'&&!editing){const holder=document.createElement('div');holder.innerHTML=rollCard(record,index);cards.append(holder.firstElementChild);}
+      details.append(wrap);card.append(details);
+      if(record&&!editing){const cost=document.createElement('details');cost.className='spec-position-details spec-price-details';cost.dataset.cardKey=key+'-cost';cost.open=expandedCards.has(key+'-cost');cost.innerHTML='<summary>Детализация стоимости</summary><div data-position-cost></div>';card.append(cost);}
+      if(tools.innerHTML)card.append(tools);cards.append(card);if(record?.edge?.mode==='separate'&&!editing){const holder=document.createElement('div');holder.innerHTML=rollCard(record,index);cards.append(holder.firstElementChild);}
     });
     $('productTables').innerHTML=cards.innerHTML;
     // cloneNode/innerHTML do not retain current values or FileLists; synchronize from the source controls.
@@ -409,7 +445,6 @@
     renderProduction();
     ['companyNameField','innField'].forEach(id=>$(id).classList.toggle('is-hidden',order.clientTypeSelect!=='company'));
     const selected=services();$('servicesTable').innerHTML=selected.length?costLines(selected.map(name=>[name,'Уточняется'])):'';
-    const rows=conditions();$('conditionsSection').classList.toggle('is-hidden',!rows.length);$('conditionsTable').innerHTML=rows.length?costLines(rows.map(row=>['Изделие '+row[0]+' · '+row[1],row[4],join([row[2],row[3]])])):'';
     const result=totals();$('totalLabel').textContent=result.partial?'Стоимость рассчитанной части с НДС':'Итого с НДС';$('orderTotal').textContent=money(result.total);$('orderVat').textContent='В том числе НДС: '+money(result.vat);
     const displayRows=records.flatMap((record,index)=>[['Изделие №'+(index+1),money(productDisplayCost(record)),inProduction(record)?'Материалы изделия':partial(record)?'Рассчитанная часть':''],...(record.edge?.mode==='separate'?[['Кромка в рулоне · к изделию '+(index+1),money(rollCost(record)),'Материал отдельно']]:[])]);
     if(quoteState().scope.length)displayRows.push(['Производство для клиента',money(quoteState().clientCost),'']);
@@ -423,13 +458,7 @@
     $('servicesPreview').textContent=(selected.length?selected.join(', '):'Упаковка и услуги не выбраны');
     const quote=quoteState();$('productionState').textContent=!quote.scope.length?'Не требуется':quote.valid?'Сумма подтверждена':quote.stale?'Нужно повторное подтверждение':'Не подтверждена';$('productionState').classList.toggle('spec-tag--warning',!!quote.scope.length&&!quote.valid);
 
-    let managerDetails=$('managerCalculationDetails');
-    if(!managerDetails){managerDetails=document.createElement('details');managerDetails.id='managerCalculationDetails';managerDetails.className='spec-manager';$('summaryDetails').append(managerDetails);}
-    const conditionsNode=$('conditionsSection');
-    managerDetails.innerHTML='<summary>Внутренняя детализация расчёта</summary><div><p class="field__note">Не включается в клиентскую спецификацию. Работы, входящие в цену изделия или производства, повторно не начисляются.</p>'+records.map((record,index)=>'<h3>Изделие '+(index+1)+' · '+esc(specificationTitle(record))+'</h3>'+costLines((record.specification?.breakdown||[]).map(item=>[item.label,breakdownValue(record,item),item.note]))).join('')+'</div>';
-    managerDetails.append(conditionsNode);
-
-    $('partialNote').classList.toggle('is-hidden',!result.partial);$('partialNote').textContent='Полная стоимость уточняется.'+(edgeMinimumIssues().length?' '+edgeMinimumIssues().join(' '):'');
+    $('partialNote').classList.toggle('is-hidden',!edgeMinimumIssues().length);$('partialNote').textContent=edgeMinimumIssues().join(' ');
     refreshPositionStatuses();
   }
   function closeEditor(){
@@ -827,11 +856,6 @@
     const node=event.target;if(!node.matches?.('[data-card-key]'))return;
     if(node.open)expandedCards.add(node.dataset.cardKey);else expandedCards.delete(node.dataset.cardKey);
   },true);
-  document.addEventListener('change',event=>{
-    const node=event.target.closest('[data-production-scope]');if(!node)return;
-    const ids=new Set(order.productionScopeIds||[]);if(node.checked)ids.add(node.dataset.productionScope);else ids.delete(node.dataset.productionScope);
-    order.productionScopeIds=[...ids];saveOrder();render();
-  });
   ['productionCostInput','productionMarkupInput'].forEach(id=>$(id).addEventListener('input',()=>{
     order.productionCostDraft=$('productionCostInput').value;order.productionMarkupDraft=$('productionMarkupInput').value;
     if(order.productionQuote)order.productionQuote.signature='';saveOrder();
