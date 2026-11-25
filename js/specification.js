@@ -359,7 +359,7 @@
       const cells=panelCells(record,row,(index+1)+'.'+(i+1));
       const edge=effectiveEdge(record),part=edge?.positionSettings?.find(item=>item.position===row.position);
       const edgeText=edge?.mode==='attached'&&part?.applies?join([edge.typeName,edge.displayName||edge.veneerName||edge.name,part.sidesName||part.sides||part.sidesId,n(part.thicknessMm??edge.thicknessMm)+' × '+n(part.widthMm??edge.widthMm)+' мм',n(part.calculatedMeters)+' пог. м']):'';
-      return '<section class="spec-size"><div class="spec-dimension"><strong>'+(index+1)+'.'+(i+1)+'</strong><span>'+esc(n(row.length)+' × '+n(row.width))+' мм</span><span>'+esc(n(row.quantity))+' шт.</span><span>'+esc(n(row.area))+' м²</span></div>'+parameterList([['Изготовление',requestManufacturing(row)],['Обработка',cells[5]],['Облицовка кромкой',edgeText],['Объём и вес',cells[6].split('\n').slice(1).join('\n')],...(!inProduction(record)?[['Цена с НДС',cells[7]],['Сумма с НДС',cells[8]]]:[]),['Примечания',cells[9]]])+(record.sizes.length>1?'<div class="spec-row-actions">'+actionButton('edit','Редактировать размер',index,i)+actionButton('duplicate','Дублировать размер',index,i)+actionButton('delete','Удалить размер',index,i)+'</div>':'')+'</section>';
+      return '<section class="spec-size"><div class="spec-dimension"><strong>'+(index+1)+'.'+(i+1)+'</strong><span>'+esc(n(row.length)+' × '+n(row.width))+' мм</span><span>'+esc(n(row.quantity))+' шт.</span><span>'+esc(n(row.area))+' м²</span></div>'+parameterList([['Изготовление',requestManufacturing(row)],['Обработка',cells[5]],['Облицовка кромкой',edgeText],['Объём и вес',cells[6].split('\n').slice(1).join('\n')],...(!inProduction(record)?[['Цена с НДС',cells[7]],['Сумма с НДС',cells[8]]]:[]),['Примечания',cells[9]]])+(record.sizes.length>1?'<div class="spec-row-actions">'+actionButton('edit','Редактировать изделие',index,i)+actionButton('duplicate','Дублировать размер',index,i)+actionButton('delete','Удалить размер',index,i)+'</div>':'')+'</section>';
     }).join('');
   }
   function requestReasons(record){
@@ -471,15 +471,11 @@
     const promise=new Promise((resolve,reject)=>pendingEditor={resolve,reject,record});
     $('calculationEngine').src=(type==='flooring'?'flooring.html':'panels.html')+'?specEngine=1';return promise;
   }
-  async function openEditor(index=null,row=0){
+  function openEditor(index=null,row=0){
     if(busy||editorController)return;
-    busy=true;render();status('Загрузка полей позиции…');
-    try{
-      editorIndex=index;editingRow=row;
-      editorController=await loadEngine(productType,index===null?null:records[index]);
-      editorOriginalRecords=records;
-      busy=false;render();status('Измените поля в таблице и нажмите «Сохранить».');
-    }catch(error){closeEditor();busy=false;render();status(error.message);}
+    const record=records[index];if(!record)return;
+    const page=record.productType==='flooring'?'flooring.html':'panels.html';
+    location.href=page+'?fromSpecification=1&editPosition='+encodeURIComponent(record.id);
   }
   function groupId(record){return record?.calculationGroupId||record?.id;}
   function restorePlateContext(controller,next,index){

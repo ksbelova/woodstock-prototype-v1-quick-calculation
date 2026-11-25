@@ -59,11 +59,50 @@
     return value;
   }
   function write(records) { sessionStorage.setItem(key, JSON.stringify(records)); }
+  // Replace a saved item in place. Linked plate calculations retain their group and
+  // are recalculated with the same original controller, excluding each current item.
+  function replaceEditedRecord(records,record,editId){
+    const index=records.findIndex(item=>item.id===editId&&item.productType===record.productType);
+    if(index<0||window.WoodstockSpecificationEdit?.id!==editId)throw new Error('Исходное изделие не найдено или не открыто для редактирования.');
+    const original=records[index],next=records.slice();
+    next[index]={...record,id:original.id,createdAt:original.createdAt};
+    if(record.productType!=='plate')return next;
+    const group=original.calculationGroupId||original.id;
+    next[index].calculationGroupId=group;
+    const indexes=next.map((item,i)=>item.productType==='plate'&&(item.calculationGroupId||item.id)===group?i:null).filter(i=>i!==null);
+    if(indexes.length<2)return next;
+    const controller=window.WoodstockPanelsController;
+    if(!controller)throw new Error('Калькулятор плит не загружен.');
+    const edited=next[index],overrides=edited.editorState?.priceAdjustmentOverrides||[];
+    const batch=overrides.find(([key])=>key==='mixmatch:actualVeneerAreaM2');
+    indexes.forEach(i=>{
+      if(next[i].materialSides?.A?.id!==edited.materialSides?.A?.id||next[i].layoutId!=='mixmatch'||!next[i].editorState) return;
+      next[i]=clone(next[i]);
+      next[i].editorState.priceAdjustmentOverrides=(next[i].editorState.priceAdjustmentOverrides||[]).filter(([key])=>key!=='mixmatch:actualVeneerAreaM2');
+      if(batch)next[i].editorState.priceAdjustmentOverrides.push(clone(batch));
+    });
+    const previousContext=window.WoodstockSpecificationContext;
+    try{
+      for(const i of indexes){
+        const saved=next[i];
+        window.WoodstockSpecificationContext={items:clone(next.filter((item,j)=>j!==i&&item.productType==='plate'))};
+        controller.restoreRecord(clone(saved));
+        const updated=controller.capture();
+        if(!updated)throw new Error('Проверьте параметры связанных изделий.');
+        next[i]={...updated,id:saved.id,createdAt:saved.createdAt,calculationGroupId:group};
+      }
+      return next;
+    }finally{
+      window.WoodstockSpecificationContext=previousContext;
+      controller.restoreRecord(clone(edited));
+    }
+  }
   function save(record) {
     try {
       const records = read();
-      records.push(record);
-      write(records);
+      const editId=new URLSearchParams(location.search).get('editPosition');
+      if(editId!==null)write(replaceEditedRecord(records,record,editId));
+      else {records.push(record);write(records);}
       sessionStorage.setItem('woodstockSpecificationProduct',record.productType);
       location.href = './specification.html?product='+encodeURIComponent(record.productType);
       return true;
