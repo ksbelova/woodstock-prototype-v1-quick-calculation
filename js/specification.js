@@ -51,8 +51,9 @@
   const productionEligible = record => record.productType==='plate';
   const productionRequired = record => productionEligible(record) && (record.productionCosts?.some(q=>q.required)||record.requiresProductionCost);
   function productionScope(){
-    // A production request is required by the calculation, not by a manual selection.
-    return records.filter(productionRequired);
+    // When any plate needs a production quote, the request covers the whole
+    // plate order, including standard products already priced by the calculator.
+    return records.some(productionRequired) ? records.filter(productionEligible) : [];
   }
   function inProduction(record){return productionScope().some(item=>item.id===record.id);}
   function effectiveWarnings(record){return inProduction(record)&&quoteState().valid&&materialsComplete(record)?(record.warnings||[]).filter(note=>!/ставк|стоимость.*производ|цен.*производ|производственн.*сумм|производственн.*стоим/i.test(note)):(record.warnings||[]);}
@@ -75,13 +76,13 @@
   }
   function quoteSignature(){
     // Include the complete production request. Descriptive order/contact edits do not affect it.
-    return JSON.stringify(productionScope().map(record=>({id:record.id,pricingRevision:record.pricingRevision,base:record.baseId,thickness:record.baseThickness,
+    return JSON.stringify({version:2,scope:productionScope().map(record=>({id:record.id,pricingRevision:record.pricingRevision,base:record.baseId,thickness:record.baseThickness,
       sides:record.sides,materials:record.materialSides,layout:record.layoutId,layoutB:record.layoutBId,
       sanding:record.sanding,calibration:record.calibration,finish:record.finishParameters,finishByPosition:record.finishByPosition,
       sizes:record.sizes.map(row=>({length:row.length,width:row.width,quantity:row.quantity,manufacturing:row.manufacturingType,transition:row.transition,comment:row.comment,files:row.files})),
       edge:{mode:record.edge?.mode,type:record.edge?.typeId,material:record.edge?.catalogItemId,thickness:record.edge?.thicknessMm,width:record.edge?.widthMm,bevel:record.edge?.bevel,meters:record.edge?.meters,
         positions:record.edge?.positionSettings?.map(item=>({position:item.position,sides:item.sidesId,thickness:item.thicknessMm,width:item.widthMm,meters:item.calculatedMeters}))},
-      comment:record.comment,files:record.files,layoutComment:record.layoutTzComment,layoutFiles:record.layoutTzFiles})));
+      comment:record.comment,files:record.files,layoutComment:record.layoutTzComment,layoutFiles:record.layoutTzFiles}))});
   }
   function decimal(value){const raw=String(value??'').trim().replace(/\s/g,'');return /^\d+(?:[.,]\d{1,2})?$/.test(raw)?Number(raw.replace(',','.')):null;}
   function quoteState(){
@@ -372,7 +373,7 @@
       if(record.requiresFinishProductionCost)reasons.push('Стоимость покрытия');
       if(record.requiresReadyShirtProductionCost)reasons.push('Стоимость фанеровки готовой рубашкой');
     }
-    return [...new Set(reasons.length?reasons:[productionRequired(record)?'Требуется стоимость производства по выбранным параметрам':'Стоимость производства не требуется'])];
+    return [...new Set(reasons.length?reasons:[productionRequired(record)?'Требуется стоимость производства по выбранным параметрам':inProduction(record)?'Включено в общий производственный запрос по заказу':'Стоимость производства не требуется'])];
   }
   function requestParameters(record){
     const edge=effectiveEdge(record)||{};
@@ -859,7 +860,7 @@
   $('confirmProduction').addEventListener('click',()=>{
     const cost=decimal($('productionCostInput').value),markup=decimal($('productionMarkupInput').value);
     if(!productionScope().length||cost===null||cost<=0||!Number.isSafeInteger(Math.round(cost*100))||markup===null||markup<0||!Number.isSafeInteger(Math.round(cost*(1+markup/100)*100))){$('productionStatus').textContent='Введите положительную себестоимость с точностью до копеек и неотрицательную наценку. Итоговая сумма должна быть корректным денежным значением.';return;}
-    order.productionQuote={cost,markup,signature:quoteSignature(),confirmedAt:new Date().toISOString()};saveOrder();render();
+    order.productionQuote={cost,markup,signature:quoteSignature(),scope:productionScope().map(record=>({id:record.id,includedComponents:(record.specification?.breakdown||[]).filter(item=>!separatelyAddedMaterial(record,item)).map(item=>item.label),separateComponents:materialParts(record).map(item=>item.label)})),confirmedAt:new Date().toISOString()};saveOrder();render();
   });
   $('addPosition').addEventListener('click',()=>{location.href=(productType==='flooring'?'flooring.html':'panels.html')+'?fromSpecification=1';});
   document.addEventListener('click',event=>{
