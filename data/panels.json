@@ -44,7 +44,7 @@
     "commonMdfStandardFormats": [],
     "commonMdfStandardFormatsNote": "Стандартность определяется по самой новой точной матрице там, где указан конкретный формат. Пустая ячейка не отменяет ранее подтверждённый формат; ранее существовавшие варианты сохраняются до прямого нового запрета.",
     "calibrationRatePerM2For1Mm": 150,
-    "edgeMachineThresholdRunningM": 40,
+    "edgeMachineThresholdRunningM": 35,
     "roughBackVeneerRatesPerM2ByThickness": {
       "0.6": 210,
       "1.5": 440
@@ -170,7 +170,9 @@
       "lengthJoiningColumn": "L: not imported as an edge material or edging service"
     },
     "productionMarkupPercent": 50,
-    "productionMarkupNote": "На себестоимость основы с работой и производственных операций начисляется 50%. Прайсовые складские изделия, шпон и материалы кромки повторно не умножаются; общая сумма производства обрабатывается в спецификации."
+    "productionMarkupNote": "На себестоимость основы с работой и производственных операций начисляется 50%. Прайсовые складские изделия, шпон и материалы кромки повторно не умножаются; общая сумма производства обрабатывается в спецификации.",
+    "edgeMachineThresholdBasis": "geometric_without_reserve",
+    "cleanCutMaxLengthMm": 3100
   },
   "bases": [
     {
