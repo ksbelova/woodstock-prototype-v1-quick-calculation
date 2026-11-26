@@ -3284,28 +3284,24 @@
   }
 
   function finishedDetailTechnologicalLimit(size) {
+    if (!size) return null;
+    const type = manufacturingTypeForSize(size);
+    const thickness = parseThicknessComposition(currentBaseThicknessRaw()).total;
     if (isDetailedPanelCalculation()) {
-      if (!size) return null;
-      const type = manufacturingTypeForSize(size);
-      const thickness = parseThicknessComposition(currentBaseThicknessRaw()).total;
       if (["standard", "allowance20"].includes(type) && thickness !== 50) return { maxLengthMm: 3660 };
       if (thickness === 50 && ["standard", "allowance20"].includes(type)) {
         return { maxLengthMm: 2800, maxWidthMm: 1032 };
       }
-      if (type !== "exact" || !Number.isFinite(thickness)) return null;
-      return (data?.meta?.finishedDetailLimits || []).find(limit =>
-        thickness >= (num(limit.minThicknessMm) === 20 ? 22 : num(limit.minThicknessMm)) &&
-        thickness <= num(limit.maxThicknessMm)) || null;
     }
-    if (!size || manufacturingTypeForSize(size) !== "exact") return null;
-    const thickness = parseThicknessComposition(currentBaseThicknessRaw()).total;
-    if (!Number.isFinite(thickness)) return null;
-
-    const limits = Array.isArray(data?.meta?.finishedDetailLimits) ? data.meta.finishedDetailLimits : [];
-    return limits.find((limit) => (
-      thickness >= (num(limit?.minThicknessMm) === 20 ? 22 : num(limit?.minThicknessMm)) &&
-      thickness <= num(limit?.maxThicknessMm)
-    )) || null;
+    if (type !== "exact") return null;
+    const configured = (data?.meta?.finishedDetailLimits || []).find(limit =>
+      Number.isFinite(thickness) &&
+      thickness >= (num(limit.minThicknessMm) === 20 ? 22 : num(limit.minThicknessMm)) &&
+      thickness <= num(limit.maxThicknessMm));
+    // The clean-cut length limit applies to every base and thickness, even
+    // when no thickness-specific width limit has been configured.
+    const maxLengthMm = num(data?.meta?.cleanCutMaxLengthMm) || 3100;
+    return { ...configured, maxLengthMm: Math.min(maxLengthMm, num(configured?.maxLengthMm) || maxLengthMm) };
   }
 
   function technologicalLimitDescription(limit) {
@@ -4441,8 +4437,8 @@
       : edgeState.operationRateClass === "thick" ? 1.5
         : null;
     if (!Number.isFinite(tariffClassThickness)) return null;
-    // Станок применяется только при метраже строго свыше порога (для всех сценариев).
-    return Core.edgeRateFor(data, baseId, thicknessRaw, tariffClassThickness, runningM, { machineThresholdExclusive: true });
+    // Подтверждено Woodstock: дешёвый тариф от 35 пог. м без запаса, включая границу.
+    return Core.edgeRateFor(data, baseId, thicknessRaw, tariffClassThickness, runningM);
   }
 
   function standardSheetPrices(standard, condition, warnings = []) {
@@ -6082,7 +6078,7 @@
               breakdown.push({
                 label: `Кромление — операция · позиция ${item.position}`,
                 value: operationCost,
-                note: `${round(operationMeters, 2)} пог. м × ${money(rateInfo.rate)}/пог. м · ${rateInfo.method === "machine" ? `станок (общий метраж свыше ${rateInfo.threshold} пог. м)` : rateInfo.method === "manual" ? `вручную (общий метраж до ${rateInfo.threshold} пог. м включительно)` : "ранее подтверждённый тариф"}.`
+                note: `${round(operationMeters, 2)} пог. м × ${money(rateInfo.rate)}/пог. м · ${rateInfo.method === "machine" ? `станок (геометрический метраж от ${rateInfo.threshold} пог. м включительно)` : rateInfo.method === "manual" ? `вручную (геометрический метраж менее ${rateInfo.threshold} пог. м)` : "ранее подтверждённый тариф"}.`
               });
             } else if (productionOperation || operationPriceComesFromProduction(base)) {
               operationIncomplete = true;
