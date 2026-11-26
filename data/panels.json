@@ -30,7 +30,6 @@
     ],
     "unconfirmed": [
       "Фиксированной цены на глянец нет; только индивидуальный расчёт.",
-      "Для части толщин лицевого шпона в нестандарте отдельные тарифы обещаны, но файл не идентифицирован.",
       "Таблица «Склад» даёт ставки МДФ по виду обратной стороны, но не показывает полную цену панели с выбранным лицевым шпоном. Существующие полные складские SKU не заменены этими частичными ставками; новые ставки стандарта используются для заказа по стандартному формату.",
       "Пустые ячейки листа «Основы и Толщины» не трактуются как отмена ранее подтверждённых допустимых толщин/форматов. Если новый файл даёт конкретный непустой формат, он имеет приоритет; если ячейка пуста, ранее подтверждённый формат сохранён, а для новой толщины без прежнего правила остаётся ручной/нестандартный режим.",
       "Для толщин/составов, которые не описаны тарифами раскроя или кромления в таблице 28.08.2026, сохранены ранее подтверждённые тарифы как legacy-fallback. Они не экстраполируются на новые сочетания; актуальность этих старых ставок желательно подтвердить отдельно."
@@ -96,13 +95,12 @@
     "faceVeneerThicknessSelectionMode": "catalog_only",
     "faceVeneerThicknessSelectionNote": "Толщина лицевого шпона выбирается только после конкретного наименования материала и только из толщин, подтверждённых у вариантов этой позиции; ручной ввод не используется.",
     "thickFaceVeneerWorkAdjustment": {
-      "thresholdMm": 1.5,
-      "baselineClass": "0.6",
-      "thickClass": "1.5+",
-      "source": "standardProductionRates",
-      "mode": "ratio",
+      "mode": "direct_tariff",
+      "source": "nonstandardRatesThickVeneer",
+      "minThicknessMm": 1,
+      "maxThicknessMm": 4.5,
       "appliesTo": "nonstandard_exact",
-      "note": "Для точного размера при лицевом шпоне от 1,5 мм коэффициент работы определяется как стандартная ставка 1,5 мм+ / стандартная ставка 0,6 мм для той же основы, толщины основы и количества сторон. Если пары ставок нет, коэффициент должен быть указан менеджером вручную; фиксированное значение не используется."
+      "note": "Прямая ставка деталировки для шпона 1–4,5 мм из прайса, обновлённого 25.11.2026. Коэффициент 1,53 включён. При отсутствии ставки требуется стоимость производства; пересчёт через стандартные ставки не применяется."
     },
     "standardLayoutVeneerWastePercent": 60,
     "exactSizeVeneerWastePercent": 80,
@@ -135597,6 +135595,408 @@
       "scope": "order_volume",
       "minRunningM": 5000,
       "maxRunningM": null
+    }
+  ],
+  "nonstandardRatesThickVeneer": [
+    {
+      "baseId": "dsp",
+      "baseLabel": "ДСП",
+      "thickness": "16",
+      "sides": 1,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 1361.7,
+      "baseRatePerM2": 890.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "dsp",
+      "baseLabel": "ДСП",
+      "thickness": "16",
+      "sides": 2,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 1667.7,
+      "baseRatePerM2": 1090.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "6",
+      "sides": 1,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 1210.23,
+      "baseRatePerM2": 791.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "6",
+      "sides": 2,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 1516.23,
+      "baseRatePerM2": 991.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "8",
+      "sides": 1,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 1361.7,
+      "baseRatePerM2": 890.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "8",
+      "sides": 2,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 1667.7,
+      "baseRatePerM2": 1090.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "10",
+      "sides": 1,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 1530.0,
+      "baseRatePerM2": 1000.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "10",
+      "sides": 2,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 1836.0,
+      "baseRatePerM2": 1200.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "12",
+      "sides": 1,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 1614.15,
+      "baseRatePerM2": 1055.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "12",
+      "sides": 2,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 1920.15,
+      "baseRatePerM2": 1255.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "16",
+      "sides": 1,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 1866.6000000000001,
+      "baseRatePerM2": 1220.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "16",
+      "sides": 2,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 2172.6,
+      "baseRatePerM2": 1420.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "18",
+      "sides": 1,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 2034.9,
+      "baseRatePerM2": 1330.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "18",
+      "sides": 2,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 2340.9,
+      "baseRatePerM2": 1530.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "22",
+      "sides": 1,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 2203.2,
+      "baseRatePerM2": 1440.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "22",
+      "sides": 2,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 2509.2,
+      "baseRatePerM2": 1640.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "25",
+      "sides": 1,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 2371.5,
+      "baseRatePerM2": 1550.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "25",
+      "sides": 2,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 2677.5,
+      "baseRatePerM2": 1750.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "dsp",
+      "baseLabel": "ДСП",
+      "thickness": "16+16",
+      "sides": 1,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 2264.4,
+      "baseRatePerM2": 1480.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "dsp",
+      "baseLabel": "ДСП",
+      "thickness": "16+16",
+      "sides": 2,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 2952.9,
+      "baseRatePerM2": 1930.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "dsp",
+      "baseLabel": "ДСП",
+      "thickness": "16+16+16",
+      "sides": 1,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 3320.1,
+      "baseRatePerM2": 2170.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "dsp",
+      "baseLabel": "ДСП",
+      "thickness": "16+16+16",
+      "sides": 2,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 4008.6,
+      "baseRatePerM2": 2620.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "16+16",
+      "sides": 1,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 3274.2000000000003,
+      "baseRatePerM2": 2140.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "16+16",
+      "sides": 2,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 3962.7000000000003,
+      "baseRatePerM2": 2590.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "18+18",
+      "sides": 1,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 3687.3,
+      "baseRatePerM2": 2410.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "18+18",
+      "sides": 2,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 4375.8,
+      "baseRatePerM2": 2860.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "22+22",
+      "sides": 1,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 4100.4,
+      "baseRatePerM2": 2680.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "22+22",
+      "sides": 2,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 4788.9,
+      "baseRatePerM2": 3130.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "25+25",
+      "sides": 1,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 4513.5,
+      "baseRatePerM2": 2950.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "25+25",
+      "sides": 2,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 5202.0,
+      "baseRatePerM2": 3400.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "16+16+16",
+      "sides": 1,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 4834.8,
+      "baseRatePerM2": 3160.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "16+16+16",
+      "sides": 2,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 5523.3,
+      "baseRatePerM2": 3610.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "16+3+16",
+      "sides": 1,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 3765.33,
+      "baseRatePerM2": 2461.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "16+3+16",
+      "sides": 2,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 4453.83,
+      "baseRatePerM2": 2911.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "18+3+18",
+      "sides": 1,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 4101.93,
+      "baseRatePerM2": 2681.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "18+3+18",
+      "sides": 2,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 4790.43,
+      "baseRatePerM2": 3131.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "16+6+16",
+      "sides": 1,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 4025.4300000000003,
+      "baseRatePerM2": 2631.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "16+6+16",
+      "sides": 2,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 4713.93,
+      "baseRatePerM2": 3081.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "16+8+16",
+      "sides": 1,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 4176.9,
+      "baseRatePerM2": 2730.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
+    },
+    {
+      "baseId": "mdf",
+      "baseLabel": "МДФ",
+      "thickness": "16+8+16",
+      "sides": 2,
+      "veneerThicknessClass": "1-4.5",
+      "ratePerM2": 4865.4,
+      "baseRatePerM2": 3180.0,
+      "sourceNote": "Таблица деталировки 25.11.2026, шпон 1–4,5 мм; коэффициент 1,53 включён"
     }
   ]
 }
