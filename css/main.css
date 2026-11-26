@@ -1667,6 +1667,17 @@ input[type="file"]::file-selector-button:hover {
 .field-grid--size-row .field { margin-bottom: 0; }
 .field-grid--size-row input[readonly] { background: var(--soft); }
 
+/* Keep dimension inputs aligned when their labels wrap to different heights. */
+body:not(.quick-panels-page) .plate-page .field-grid--size-row {
+  row-gap: 8px;
+}
+
+body:not(.quick-panels-page) .plate-page .field-grid--size-row > .field {
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  row-gap: 8px;
+}
+
 .size-row__result {
   max-width: 440px;
   margin-top: 14px;
