@@ -175,7 +175,11 @@
       }
       return nonstandardRateRowFor(key, sides, base.id) ? "automatic" : "production";
     }
-    return data?.baseThicknessPriceModes?.[base.id]?.[key] || "production";
+    const mode = data?.baseThicknessPriceModes?.[base.id]?.[key] || "production";
+    if (mode === "automatic" && size && manufacturingTypeForSize(size) === "exact") {
+      return nonstandardRateRowFor(key, Number(form.veneeredSidesSelect.value), base.id) ? "automatic" : "production";
+    }
+    return mode;
   }
 
   function priceListClientConditions() {
@@ -195,7 +199,7 @@
     (data?.standardMdfItems || []).forEach((item) => { collect(item?.pricesPerSheet); collect(item?.pricesPerM2); });
     (data?.veneers || []).forEach((item) => collect(item?.prices));
     (data?.edgeCatalog || []).forEach((item) => Object.values(item?.pricesPerRunningM || {}).forEach(collect));
-    [...(data?.standardProductionRates || []), ...(data?.nonstandardRates || [])].forEach((row) => {
+    [...(data?.standardProductionRates || []), ...(data?.nonstandardRates || []), ...(data?.nonstandardRatesThickVeneer || [])].forEach((row) => {
       collect(row?.pricesPerM2);
       collect(row?.discountsPercent);
     });
@@ -4311,12 +4315,7 @@
     return { applies: true, mode: "inherit", sidesId: form.edgeSidesSelect.value || "", thicknessMm: currentEdgeThickness("attached"), widthMm: num(form.edgeWidthSelect.value) || num(form.edgeOrderWidthInput.value) };
   }
   function nonstandardRateRowFor(thicknessRaw, sides, baseId = selectedBase()?.id || "mdf") {
-    const key = normalizeThicknessKey(thicknessRaw);
-    return (data?.nonstandardRates || []).find((item) => (
-      item.baseId === baseId &&
-      normalizeThicknessKey(item.thickness) === key &&
-      Number(item.sides) === Number(sides)
-    )) || null;
+    return Core.nonstandardRateRowFor(data, baseId, thicknessRaw, sides, selectedVeneerThickness());
   }
 
   function nonstandardRateFor(thicknessRaw, sides, baseId = selectedBase()?.id || "mdf") {
@@ -4426,36 +4425,9 @@
   }
 
   function thickVeneerWorkAdjustmentState({ baseId, thicknessRaw, sides, veneerThickness, exactSizeRequired }) {
-    const config = data?.meta?.thickFaceVeneerWorkAdjustment || {};
-    const thresholdMm = num(config.thresholdMm) || 1.5;
-    const baselineClass = config.baselineClass || "0.6";
-    const thickClass = config.thickClass || "1.5+";
-    const applies = Boolean(exactSizeRequired && Number.isFinite(veneerThickness) && veneerThickness >= thresholdMm);
-    const id = `thick-veneer-work:${baseId || "none"}:${normalizeThicknessKey(thicknessRaw)}:${Number(sides) || 0}`;
-
-    if (!applies) {
-      return {
-        applies: false, id, thresholdMm, baselineClass, thickClass,
-        automaticCoefficient: null, actualCoefficient: null, changedManually: false,
-        baselineRatePerM2: null, thickRatePerM2: null, manualRequired: false
-      };
-    }
-
-    const baselineRatePerM2 = standardProductionRateForClass(thicknessRaw, sides, baselineClass, baseId);
-    const thickRatePerM2 = standardProductionRateForClass(thicknessRaw, sides, thickClass, baseId);
-    const automaticCoefficient = Number.isFinite(baselineRatePerM2) && baselineRatePerM2 > 0 && Number.isFinite(thickRatePerM2) && thickRatePerM2 > 0
-      ? thickRatePerM2 / baselineRatePerM2
-      : null;
-    const manualValue = num(priceAdjustmentOverrides.get(id));
-    const changedManually = Number.isFinite(manualValue) && manualValue > 0;
-    const actualCoefficient = changedManually ? manualValue : automaticCoefficient;
-
-    return {
-      applies: true, id, thresholdMm, baselineClass, thickClass,
-      automaticCoefficient, actualCoefficient, changedManually,
-      baselineRatePerM2, thickRatePerM2,
-      manualRequired: !isDetailedPanelCalculation() && !Number.isFinite(automaticCoefficient)
-    };
+    // Exact-size work is priced directly from the matching veneer tariff.
+    // Saved legacy coefficient overrides must never multiply these rates.
+    return { applies: false, actualCoefficient: null, automaticCoefficient: null };
   }
   function cuttingRateFor(thicknessRaw, baseId = selectedBase()?.id || "mdf") {
     return Core.cuttingRateFor(data, baseId, thicknessRaw);
@@ -4520,13 +4492,7 @@
   }
 
   function manufacturingCostFromProduction(size) {
-    return (isDetailedPanelCalculation() && manufacturingTypeForSize(size) === "exact" && selectedVeneerThickness() >= 1.5 &&
-      !Number.isFinite(thickVeneerWorkAdjustmentState({
-        baseId: selectedBase()?.id, thicknessRaw: currentBaseThicknessRaw(),
-        sides: Number(form.veneeredSidesSelect.value), veneerThickness: selectedVeneerThickness(),
-        exactSizeRequired: true
-      }).actualCoefficient)) ||
-      selectedBasePriceMode(size) === "production" || manufacturingTypeForSize(size) === "allowance20" ||
+    return selectedBasePriceMode(size) === "production" || manufacturingTypeForSize(size) === "allowance20" ||
       (needsLayoutSelection() && selectedLayout()?.requiresProductionCost) || backLayoutRequiresProduction() || isReadyShirt(selectedVeneerA) ||
       (Number(form.veneeredSidesSelect.value) === 2 && isReadyShirt(form.veneerBModeSelect.value === "same" ? selectedVeneerA : form.veneerBModeSelect.value === "other" ? selectedVeneerB : null));
   }
@@ -5095,28 +5061,6 @@
               breakdown.push({ label: `${base.name} + работа, ${size.length}×${size.width}`, value: 0, note: `Цена условия «${basePricing.conditionName}» для компонента не подтверждена — компонент не включён в итог.` });
             } else {
               breakdown.push({ label: `${base.name} + работа, ${size.length}×${size.width}`, value: baseWork, note: `${rateRow.sourceNote || "Готовая ставка из актуальной таблицы деталировки"}: ${money(appliedRate)}/м².${basePricing.retailFallback ? " Применена розничная ставка." : ""}${basePricing.conditionFound && condition !== "retail" ? ` ${basePricing.conditionName} применено по прайсовым данным.` : ""} Коэффициент 1,53 повторно не применяется.` });
-            }
-            const faceThickness = selectedVeneerThickness();
-            if (!basePricing.conditionUnresolved && thickVeneerWorkAdjustment.applies && Number.isFinite(thickVeneerWorkAdjustment.actualCoefficient)) {
-              const baseWorkBeforeThickVeneer = baseWork;
-              baseWork = baseWorkBeforeThickVeneer * thickVeneerWorkAdjustment.actualCoefficient;
-              baseWorkRetail *= thickVeneerWorkAdjustment.actualCoefficient;
-              const thickVeneerDelta = baseWork - baseWorkBeforeThickVeneer;
-              const coefficientSource = Number.isFinite(thickVeneerWorkAdjustment.automaticCoefficient)
-                ? `${money(thickVeneerWorkAdjustment.thickRatePerM2)}/м² ÷ ${money(thickVeneerWorkAdjustment.baselineRatePerM2)}/м²`
-                : "автоматическая пара стандартных ставок отсутствует";
-              breakdown.push({
-                label: `Работа с толстым шпоном · позиция ${size.position}`,
-                value: thickVeneerDelta,
-                note: `Ставка точного размера × ${round(thickVeneerWorkAdjustment.actualCoefficient, 4)}. ${thickVeneerWorkAdjustment.changedManually ? "Коэффициент изменён менеджером вручную." : `Автоматически по стандартным ставкам: ${coefficientSource}.`}`
-              });
-            } else if (!basePricing.conditionUnresolved && Number.isFinite(faceThickness) && Math.abs(faceThickness - 0.6) > 0.001 && faceThickness < thickVeneerWorkAdjustment.thresholdMm) {
-              const key = `nonstandard-intermediate-veneer-${faceThickness}`;
-              if (!standardRequestWarnings.has(key)) {
-                warnings.push(`Нестандарт со шпоном ${String(faceThickness).replace(".", ",")} мм: отдельная подтверждённая доплата для толщины, отличной от 0,6 мм и меньше 1,5 мм, отсутствует. Базовая ставка основы + работы включена, дополнительная корректировка не рассчитана.`);
-                standardRequestWarnings.add(key);
-              }
-              (hasPartialPrice = true, markPositionPending(size, "Основа и производственные операции"));
             }
           } else { warnings.push(`Нет подтверждённой ставки нестандарта для ${base.name} ${baseThicknessDisplay(thickness)}, ${sides} ст.`); (hasPartialPrice = true, markPositionPending(size, "Основа и производственные операции")); }
         }
@@ -9888,7 +9832,7 @@
         else if (object[key] && typeof object[key] === "object") multiply(object[key]);
       });
     };
-    [source.nonstandardRates, source.standardProductionRates, source.cuttingRates, source.edgeRates].forEach(rows =>
+    [source.nonstandardRates, source.nonstandardRatesThickVeneer, source.standardProductionRates, source.cuttingRates, source.edgeRates].forEach(rows =>
       (rows || []).forEach(row => {
         Object.keys(row).filter(key => /ratePer/i.test(key) && !/^baseRate/.test(key)).forEach(key => {
           if (Number.isFinite(row[key])) row[key] *= factor;
