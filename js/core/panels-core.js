@@ -151,7 +151,7 @@
     const group = edge >= 0.5 && edge <= 1 ? "thin" : edge >= 1.5 && edge <= 2 ? "thick" : null;
     if (!group) return null;
 
-    const threshold = parseNumber(data?.meta?.edgeMachineThresholdRunningM) ?? 40;
+    const threshold = parseNumber(data?.meta?.edgeMachineThresholdRunningM) ?? 35;
     const machine = options.machineThresholdExclusive ? meters > threshold : meters >= threshold;
     const method = machine ? "Machine" : "Manual";
     const currentKey = `${group}${method}RatePerRunningM`;
