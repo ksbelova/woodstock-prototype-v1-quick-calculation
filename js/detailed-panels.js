@@ -4088,7 +4088,7 @@
       setSizeFieldError(
         row,
         key,
-        Number.isFinite(max ?? fallbackMax) ? `${label}: допустимо от 1 до ${Math.floor(max ?? fallbackMax)}.` : `${label}: размер не помещается в подтверждённый формат основы.`
+        Number.isFinite(max ?? fallbackMax) ? `${label}: допустимо от ${manufacturingTypeForRow(row) === "exact" ? 50 : 1} до ${Math.floor(max ?? fallbackMax)} мм.` : `${label}: размер не помещается в подтверждённый формат основы.`
       );
       return false;
     }
