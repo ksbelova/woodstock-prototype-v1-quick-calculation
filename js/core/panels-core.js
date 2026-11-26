@@ -91,18 +91,27 @@
     return null;
   }
 
-  function nonstandardRateFor(data, baseId, thicknessRaw, sides) {
-    // Backward compatibility with the previous 3-argument call.
+  function nonstandardRateRowFor(data, baseId, thicknessRaw, sides, veneerThickness = 0.6) {
+    const thick = parseNumber(veneerThickness);
+    const rows = Number.isFinite(thick) && Math.abs(thick - 0.6) < 0.001
+      ? data?.nonstandardRates
+      : Number.isFinite(thick) && thick >= 1 && thick <= 4.5
+        ? data?.nonstandardRatesThickVeneer
+        : null;
+    return (rows || []).find((x) => (
+      (!x.baseId || x.baseId === baseId) &&
+      normalizeThicknessKey(x.thickness) === normalizeThicknessKey(thicknessRaw) &&
+      Number(x.sides) === Number(sides)
+    )) || null;
+  }
+
+  function nonstandardRateFor(data, baseId, thicknessRaw, sides, veneerThickness = 0.6) {
     if (arguments.length === 3) {
       sides = thicknessRaw;
       thicknessRaw = baseId;
       baseId = "mdf";
     }
-    const row = (data?.nonstandardRates || []).find((x) => (
-      (!x.baseId || x.baseId === baseId) &&
-      normalizeThicknessKey(x.thickness) === normalizeThicknessKey(thicknessRaw) &&
-      Number(x.sides) === Number(sides)
-    ));
+    const row = nonstandardRateRowFor(data, baseId, thicknessRaw, sides, veneerThickness);
     return row ? parseNumber(row.ratePerM2) : null;
   }
 
@@ -700,6 +709,7 @@
     parseThicknessComposition,
     closestExactRate,
     edgeMetersForSize,
+    nonstandardRateRowFor,
     nonstandardRateFor,
     standardProductionRateFor,
     cuttingRateFor,
